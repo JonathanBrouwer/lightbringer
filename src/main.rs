@@ -15,6 +15,7 @@ use esp_println::println;
 use crate::wifi::setup_wifi;
 
 use embedded_storage::{ReadStorage, Storage};
+use esp_storage::FlashStorage;
 use crate::http::setup_http_server;
 
 
@@ -28,16 +29,10 @@ async fn main(spawner: Spawner) {
     let timer_group0 = TimerGroup::new(peripherals.TIMG0, &clocks);
     embassy::init(&clocks, timer_group0);
 
+    // Setup http
     let stack = setup_wifi(peripherals.SYSTIMER, peripherals.RNG, system.radio_clock_control, &clocks, peripherals.WIFI, spawner).await;
     setup_http_server(stack, spawner).await;
-
-    // let mut flash = FlashStorage::new();
-    // let table = PartitionTable::new(0x8000, 0x1000);
-    // table.read_storage(&mut flash, None);
-
-    loop {
-        println!("Ping!");
-        Timer::after(Duration::from_millis(1_000)).await;
-    }
+    
+    println!("Running...")
 }
 
