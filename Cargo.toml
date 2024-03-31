@@ -6,7 +6,7 @@ edition = "2021"
 
 [dependencies]
 ## ESP HAL
-esp-hal = { version = "0.16.0", features = ["esp32c3", "async", "embassy", "embassy-time-systick-16mhz", "embassy-executor-thread", "embassy-integrated-timers"] }
+esp-hal = { version = "0.16.0", features = ["esp32c3", "async", "embassy", "embassy-time-timg0", "embassy-executor-thread", "embassy-integrated-timers"] }
 esp-backtrace = { version = "0.11.1", features = [
     "esp32c3",
     "panic-handler",
@@ -30,6 +30,8 @@ esp-wifi = { version = "0.4.0", features = [
     "esp32c3",
     "utils",
     "wifi-default",
+    "smoltcp",
+    "embassy-net"
 ] }
 
 heapless = { version = "0.8.0", default-features = false }
@@ -39,6 +41,11 @@ embassy-net = { version = "0.4.0", features = [
     "udp",
     "dhcpv4",
     "medium-ethernet",
+] }
+static_cell = { version = "2.0.0", features = ["nightly"] }
+smoltcp = { version = "0.11.0", default-features = false, features = [
+    "medium-ethernet",
+    "socket-raw",
 ] }
 
 [profile.dev]
