@@ -8,7 +8,8 @@ pub enum OtaError<T> {
     /// so it may not start an update before being verified.
     /// See `ota_verify`
     PendingVerify,
-    IoError(T),
+    /// Error while reading the update data
+    ReadError(T),
 }
 
 /// Begin a new OTA update.

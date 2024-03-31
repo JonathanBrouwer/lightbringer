@@ -4,6 +4,7 @@
 
 mod wifi;
 mod ota;
+mod partitions;
 
 use embassy_executor::Spawner;
 use embassy_time::{Duration, Timer};
