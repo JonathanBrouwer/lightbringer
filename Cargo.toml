@@ -60,9 +60,6 @@ embassy-executor = { git = "https://github.com/embassy-rs/embassy" }
 embassy-time = { git = "https://github.com/embassy-rs/embassy" }
 embassy-time-driver = { git = "https://github.com/embassy-rs/embassy" }
 
-# OTA update
-esp-partition-table = "0.1.1"
-
 [profile.dev]
 # Rust debug is too slow. 
 # For debug builds always builds with some optimization
