@@ -62,8 +62,7 @@ pub async fn setup_wifi(systimer: SYSTIMER, rng: RNG, radio: RadioClockControl, 
 /// Task with the goal to connect to the wifi network when possible
 #[embassy_executor::task]
 async fn connect_task(mut controller: WifiController<'static>) {
-    println!("start connection task");
-    println!("Device capabilities: {:?}", controller.get_capabilities());
+    println!("Start connection task...");
     loop {
         match esp_wifi::wifi::get_wifi_state() {
             WifiState::StaConnected => {
@@ -81,11 +80,10 @@ async fn connect_task(mut controller: WifiController<'static>) {
                 ..Default::default()
             });
             controller.set_configuration(&client_config).unwrap();
-            println!("Starting wifi");
+            println!("Starting wifi controller...");
             controller.start().await.unwrap();
-            println!("Wifi started!");
         }
-        println!("About to connect...");
+        println!("Trying to connect to wifi network...");
 
         match controller.connect().await {
             Ok(_) => println!("Wifi connected!"),
