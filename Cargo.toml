@@ -48,6 +48,9 @@ smoltcp = { version = "0.11.0", default-features = false, features = [
     "socket-raw",
 ] }
 
+# OTA update
+esp-partition-table = "0.1.1"
+
 [profile.dev]
 # Rust debug is too slow. 
 # For debug builds always builds with some optimization
