@@ -191,6 +191,8 @@ dependencies = [
  "critical-section",
  "document-features",
  "embassy-executor-macros",
+ "embassy-time-driver",
+ "embassy-time-queue-driver",
 ]
 
 [[package]]
@@ -823,6 +825,7 @@ dependencies = [
  "embassy-net",
  "embassy-net-driver",
  "embassy-sync",
+ "embassy-time",
  "embedded-hal-async",
  "embedded-io-async",
  "esp-alloc",
