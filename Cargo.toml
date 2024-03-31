@@ -14,11 +14,14 @@ esp-backtrace = { version = "0.11.1", features = [
     "println"
 ] }
 esp-println = { version = "0.9.1", features = ["esp32c3"] }
+esp-storage = { version = "0.3.0", features = ["esp32c3"] }
+esp-partition-table = "0.1.1"
+embedded-storage = "0.3"
 embedded-hal-async = "1.0.0"
 embedded-io-async = "0.6.1"
 
 ## Embassy
-embassy-executor   = { version = "0.5.0" }
+embassy-executor   = { version = "0.5.0", features = ["nightly"] }
 embassy-time   = { version = "0.3.0" }
 embassy-sync = "0.5.0"
 
@@ -33,7 +36,6 @@ esp-wifi = { version = "0.4.0", features = [
     "smoltcp",
     "embassy-net"
 ] }
-
 heapless = { version = "0.8.0", default-features = false }
 embassy-net-driver = { version = "0.2" }
 embassy-net = { version = "0.4.0", features = [
@@ -43,10 +45,20 @@ embassy-net = { version = "0.4.0", features = [
     "medium-ethernet",
 ] }
 static_cell = { version = "2.0.0", features = ["nightly"] }
+
+# HTTP
 smoltcp = { version = "0.11.0", default-features = false, features = [
     "medium-ethernet",
     "socket-raw",
 ] }
+picoserve = { version = "0.10.2", features = ["embassy"] }
+
+[patch.crates-io]
+# Fixes https://github.com/embassy-rs/embassy/issues/2709
+# Fixes https://github.com/rust-lang/rust/issues/122775
+embassy-executor = { git = "https://github.com/embassy-rs/embassy" }
+embassy-time = { git = "https://github.com/embassy-rs/embassy" }
+embassy-time-driver = { git = "https://github.com/embassy-rs/embassy" }
 
 # OTA update
 esp-partition-table = "0.1.1"

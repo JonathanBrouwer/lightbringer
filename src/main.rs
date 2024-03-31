@@ -1,10 +1,12 @@
 #![no_std]
 #![no_main]
 #![feature(type_alias_impl_trait)]
+#![feature(impl_trait_in_assoc_type)]
 
 mod wifi;
 mod ota;
 mod partitions;
+mod http;
 
 use embassy_executor::Spawner;
 use embassy_time::{Duration, Timer};
@@ -13,6 +15,10 @@ use esp_hal::{clock::ClockControl, embassy::{self}, peripherals::Peripherals, pr
 use esp_hal::timer::TimerGroup;
 use esp_println::println;
 use crate::wifi::setup_wifi;
+
+use embedded_storage::{ReadStorage, Storage};
+use esp_storage::FlashStorage;
+use crate::http::setup_http_server;
 
 
 #[main]
@@ -25,11 +31,10 @@ async fn main(spawner: Spawner) {
     let timer_group0 = TimerGroup::new(peripherals.TIMG0, &clocks);
     embassy::init(&clocks, timer_group0);
 
-    setup_wifi(peripherals.SYSTIMER, peripherals.RNG, system.radio_clock_control, &clocks, peripherals.WIFI, &spawner).await;
+    // Setup http
+    let stack = setup_wifi(peripherals.SYSTIMER, peripherals.RNG, system.radio_clock_control, &clocks, peripherals.WIFI, spawner).await;
+    setup_http_server(stack, spawner).await;
 
-    loop {
-        println!("Bing!");
-        Timer::after(Duration::from_millis(1_000)).await;
-    }
+    println!("Running...")
 }
 

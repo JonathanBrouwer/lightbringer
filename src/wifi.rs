@@ -14,7 +14,9 @@ use static_cell::make_static;
 const SSID: &str = "Jonathan's Tennisnet";
 const PASSWORD: &str = "nahtanoj";
 
-pub async fn setup_wifi(systimer: SYSTIMER, rng: RNG, radio: RadioClockControl, clocks: &Clocks<'_>, wifi: WIFI, spawner: &Spawner) -> &'static Stack<WifiDevice<'static, WifiStaDevice>> {
+pub type WifiStack = &'static Stack<WifiDevice<'static, WifiStaDevice>>;
+
+pub async fn setup_wifi(systimer: SYSTIMER, rng: RNG, radio: RadioClockControl, clocks: &Clocks<'_>, wifi: WIFI, spawner: Spawner) -> WifiStack {
     let timer = SystemTimer::new(systimer).alarm0;
     let mut rng = Rng::new(rng);
 

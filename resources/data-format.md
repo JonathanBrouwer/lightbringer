@@ -14,7 +14,7 @@ Each 16 bit number is represented in little endian format, for example the 16 bi
 
 # Websocket behavior
 
-- The websocket is located at `ws://<IP OF ESP32>:81/` as defined in [line 85 of index.html](resources/index.html#85).
+- The websocket is located at `ws://<IP OF ESP32>:/ws` as defined in [line 85 of index.html](resources/index.html#85).
 - There is one global data packet in ram that must be synchronized among all clients.
 - This global packet should be stored to flash and loaded into ram on startup.
 - When a new client connects, the global packet in ram must be sent to them.
