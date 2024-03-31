@@ -1,0 +1,56 @@
+[package]
+name = "lightbringer"
+version = "0.1.0"
+authors = ["Jonathan Brouwer <jonathantbrouwer@gmail.com>", "Anne"]
+edition = "2021"
+
+[dependencies]
+## ESP HAL
+esp-hal = { version = "0.16.0", features = ["esp32c3", "async", "embassy", "embassy-time-timg0", "embassy-executor-thread"] }
+esp-backtrace = { version = "0.11.1", features = [
+    "esp32c3",
+    "panic-handler",
+    "exception-handler",
+    "println"
+] }
+esp-println = { version = "0.9.1", features = ["esp32c3"] }
+embedded-hal-async = "1.0.0"
+embedded-io-async = "0.6.1"
+
+## Embassy
+embassy-executor   = { version = "0.5.0" }
+#embassy-time   = { version = "0.3.0" }
+embassy-sync = "0.5.0"
+
+# Alloc
+esp-alloc = "0.3"
+
+# Wifi
+esp-wifi = { version = "0.4.0", features = [
+    "esp32c3",
+    "utils",
+    "wifi-default",
+] }
+
+heapless = { version = "0.8.0", default-features = false }
+embassy-net-driver = { version = "0.2" }
+embassy-net = { version = "0.4.0", features = [
+    "tcp",
+    "udp",
+    "dhcpv4",
+    "medium-ethernet",
+] }
+
+[profile.dev]
+# Rust debug is too slow. 
+# For debug builds always builds with some optimization
+opt-level = "s"
+
+[profile.release]
+codegen-units = 1 # LLVM can perform better optimizations using a single thread
+debug = 1
+debug-assertions = false
+incremental = false
+lto = 'fat'
+opt-level = 's'
+overflow-checks = false
