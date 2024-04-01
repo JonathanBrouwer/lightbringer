@@ -4,7 +4,7 @@ use embedded_io_async::{ErrorType, Read};
 use esp_partition_table::{PartitionType, DataPartitionType, PartitionEntry, AppPartitionType};
 use esp_storage::FlashStorage;
 use crate::partitions::find_partition_type;
-use embedded_storage::ReadStorage;
+use embedded_storage::{ReadStorage, Storage};
 use crate::ota::EspOTAState::{EspOtaImgAborted, EspOtaImgInvalid, EspOtaImgNew, EspOtaImgPendingVerify, EspOtaImgUndefined, EspOtaImgValid};
 
 /// Errors that may occur during an OTA update
@@ -55,7 +55,44 @@ pub fn ota_valid() -> bool {
     let mut flash = FlashStorage::new();
     let mut buffer = [0; 32];
     flash.read(ota_data.offset, &mut buffer).unwrap(); // TODO
-    todo!()
+    let data = EspOTAData::try_from(buffer).unwrap(); // TODO
+    return match data.state {
+        EspOtaImgValid => true,
+        EspOtaImgUndefined => true,
+        _ => false
+    }
+}
+
+fn read_ota() -> EspOTAData {
+    let ota_data = find_ota_data();
+    let mut flash = FlashStorage::new();
+    let mut buffer = [0; 32];
+
+    // Try first copy
+    flash.read(ota_data.offset, &mut buffer).unwrap(); // TODO
+    if let Ok(data) = EspOTAData::try_from(buffer) {
+        return data
+    }
+
+    // First copy is corrupted, try second one
+    flash.read(ota_data.offset+0x1000, &mut buffer).unwrap(); // TODO
+    if let Ok(data) = EspOTAData::try_from(buffer) {
+        return data
+    }
+
+    unreachable!("OTA data corrupted") // TODO
+}
+
+fn write_ota(data: EspOTAData) {
+    let ota_data = find_ota_data();
+    let mut flash = FlashStorage::new();
+    let mut buffer:[u8;32] = data.into();
+
+    // Write first copy
+    flash.write(ota_data.offset, &buffer).unwrap(); //TODO
+
+    // Write second copy
+    flash.write(ota_data.offset+0x1000, &buffer).unwrap(); //TODO
 }
 
 /// Copied from esp-idf
@@ -99,7 +136,7 @@ impl From<EspOTAState> for u32 {
             EspOtaImgValid => 2,
             EspOtaImgInvalid => 3,
             EspOtaImgAborted => 4,
-            EspOtaImgUndefined => 0xFFFFFFFF,
+            EspOtaImgUndefined => u32::MAX,
         }
     }
 }
