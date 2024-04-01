@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <title>Lamp OTA Updater</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="style.css">
 <style>
 body {
   background-color: #111;
@@ -12,8 +13,25 @@ body {
 </head>
 <body>
 
-
+<form enctype="multipart/form-data" method="post" onsubmit="return send()">
+  <input id="otafile" name="ota" type="file"><br>
+  <input type="submit" value="Upload"><br>
+</form>
 
 </body>
+
+<script>
+function send() {
+  const file = document.getElementById("otafile").files[0]
+  fetch( "/ota", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/octet-stream"
+    },
+    body: file
+  } ).then(r => console.log(r));
+  return false
+}
+</script>
 
 </html>

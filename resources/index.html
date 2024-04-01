@@ -4,64 +4,7 @@
   <meta charset="UTF-8">
   <title>Lamp</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-<style>
-body {
-  background-color: #111;
-}
-
-.selectorbb {
-  position: absolute;
-  top: 100mm;
-  left: 50mm;
-  height: 40mm;
-  width: 40mm;
-  background-color: transparent;
-  border-radius: 50%;
-  --border-style: solid;
-  transform: translate(-50%, -50%);
-  z-index: 1;
-}
-
-.selector {
-  position: absolute;
-  top: 20mm;
-  left: 20mm;
-  height: 10mm;
-  width: 10mm;
-  background-color: transparent;
-  border-radius: 50%;
-  border-style: solid;
-  border-color: white;
-  transform: translate(-50%, -50%);
-  z-index: 1;
-}
-
-.swatch {
-  margin-top: 10mm;
-}
-
-.saveButton {
-  background-color: #222;
-  /* Green */
-  border: none;
-  color: white;
-  padding: 16px 32px;
-  text-align: center;
-  text-decoration: none;
-  display: inline-block;
-  font-size: 20px;
-  margin-left: 36mm;
-  margin-top: 20mm;
-  transition-duration: 0.4s;
-  cursor: pointer;
-}
-
-.saveButton:hover {
-  background-color: #321;
-  color: white;
-}
-</style>
-
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
@@ -71,7 +14,7 @@ body {
 
 <svg id="swatch" class="swatch" width="100mm" height="100mm" version="1.1" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"><defs><linearGradient id="linearGradient10" x1="50" x2="50" y1="0" y2="100" gradientTransform="translate(1e-6)" gradientUnits="userSpaceOnUse"><stop stop-opacity="0" offset=".14167"/><stop offset="1"/></linearGradient><linearGradient id="linearGradient16" x1="13" x2="87.5" y1="50" y2="50" gradientUnits="userSpaceOnUse"><stop stop-color="#ffad60" offset="0"/><stop stop-color="#ffe6d2" stop-opacity="1" offset=".5"/><stop stop-color="#628eff" offset="1"/></linearGradient></defs><path d="m-4.1e-7 13.4a100 100 0 0 1 100 2e-6l-50 86.6z" fill="url(#linearGradient16)" style="mix-blend-mode:normal"/><path d="m-4.1e-7 13.4a100 100 0 0 1 100 2e-6l-50 86.6z" fill="url(#linearGradient10)" style="mix-blend-mode:normal"/></svg>
 
-<br><button class="saveButton" onclick="save()">Save</button>
+<br><button onclick="save()">Save</button>
 
 <script>
 const selectorBB = document.querySelector(".selectorbb");

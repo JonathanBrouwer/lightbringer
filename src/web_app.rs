@@ -1,11 +1,13 @@
+use core::ptr::read_unaligned;
 use embassy_futures::select::{Either, select};
 use embassy_sync::blocking_mutex::raw::NoopRawMutex;
 use embedded_io_async::{Read, Write};
 use esp_println::println;
-use picoserve::{response, Router};
-use picoserve::response::WebSocketUpgrade;
+use picoserve::{response, ResponseSent, Router};
+use picoserve::request::Request;
+use picoserve::response::{ResponseWriter, WebSocketUpgrade};
 use picoserve::response::ws::{Message, SocketRx, SocketTx, WebSocketCallback};
-use picoserve::routing::{get, PathRouter};
+use picoserve::routing::{get, PathRouter, post, RequestHandlerFunction, RequestHandlerService};
 use static_cell::make_static;
 use crate::value_synchronizer::ValueSynchronizer;
 use crate::http::MAX_CONNECTIONS;
@@ -15,8 +17,11 @@ pub fn make_app() -> Router<AppRouter> {
     let data: &'static _ = make_static!(ValueSynchronizer::new(InputMessage::default()));
     picoserve::Router::new()
         .route("/", get(|| async move{ response::File::html(include_str!("../resources/index.html")) }))
-        // .route("/ota", get(|v| todo!()))
-        // .route("/ota", post(|v| todo!()))
+        .route("/ota",
+               get(|| async move{ response::File::html(include_str!("../resources/ota.html")) })
+                   .post_service(OtaHandler)
+        )
+        .route("/style.css", get(|| async move{ response::File::css(include_str!("../resources/style.css")) }))
         .route("/ws", get(move |update: WebSocketUpgrade| {
             update.on_upgrade(ColorHandler {
                 color: data,
@@ -98,5 +103,23 @@ impl WebSocketCallback for ColorHandler {
                 }
             }
         }
+    }
+}
+
+struct OtaHandler;
+
+impl RequestHandlerService<()> for OtaHandler {
+    async fn call_request_handler_service<R: Read, W: ResponseWriter<Error=R::Error>>(&self, _state: &(), _path_parameters: (), mut request: Request<'_, R>, response_writer: W) -> Result<ResponseSent, W::Error> {
+        let mut reader = request.body_connection.body().reader();
+        let mut count = 0;
+        loop {
+            let mut buffer = [0; 1024];
+            let read = reader.read(&mut buffer).await.unwrap();
+            if read == 0 { break }
+            count += read;
+            println!("Read {read}");
+        }
+        println!("Read {count} bytes");
+        response_writer.write_response(request.body_connection.finalize().await?, response::Response::ok("OTA Upload ok")).await
     }
 }

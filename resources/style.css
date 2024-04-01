@@ -1,0 +1,55 @@
+body {
+    background-color: #111;
+}
+
+.selectorbb {
+    position: absolute;
+    top: 100mm;
+    left: 50mm;
+    height: 40mm;
+    width: 40mm;
+    background-color: transparent;
+    border-radius: 50%;
+    --border-style: solid;
+    transform: translate(-50%, -50%);
+    z-index: 1;
+}
+
+.selector {
+    position: absolute;
+    top: 20mm;
+    left: 20mm;
+    height: 10mm;
+    width: 10mm;
+    background-color: transparent;
+    border-radius: 50%;
+    border-style: solid;
+    border-color: white;
+    transform: translate(-50%, -50%);
+    z-index: 1;
+}
+
+.swatch {
+    margin-top: 10mm;
+}
+
+button, input[type=submit], input[type=file] {
+    background-color: #222;
+    /* Green */
+    border: none;
+    color: white;
+    padding: 16px 32px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 20px;
+    margin-left: 36mm;
+    margin-top: 20mm;
+    transition-duration: 0.4s;
+    cursor: pointer;
+}
+
+button:hover, input[type=submit]:hover, input[type=file]:hover {
+    background-color: #321;
+    color: white;
+}
