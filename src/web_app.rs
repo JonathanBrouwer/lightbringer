@@ -2,6 +2,7 @@ use core::ptr::read_unaligned;
 use embassy_futures::select::{Either, select};
 use embassy_sync::blocking_mutex::raw::NoopRawMutex;
 use embedded_io_async::{Read, Write};
+use esp_hal::reset::software_reset;
 use esp_println::println;
 use picoserve::{response, ResponseSent, Router};
 use picoserve::request::Request;
@@ -11,6 +12,7 @@ use picoserve::routing::{get, PathRouter, post, RequestHandlerFunction, RequestH
 use static_cell::make_static;
 use crate::value_synchronizer::ValueSynchronizer;
 use crate::http::MAX_CONNECTIONS;
+use crate::ota::ota_begin;
 
 pub type AppRouter = impl PathRouter;
 pub fn make_app() -> Router<AppRouter> {
@@ -110,16 +112,12 @@ struct OtaHandler;
 
 impl RequestHandlerService<()> for OtaHandler {
     async fn call_request_handler_service<R: Read, W: ResponseWriter<Error=R::Error>>(&self, _state: &(), _path_parameters: (), mut request: Request<'_, R>, response_writer: W) -> Result<ResponseSent, W::Error> {
-        let mut reader = request.body_connection.body().reader();
-        let mut count = 0;
-        loop {
-            let mut buffer = [0; 1024];
-            let read = reader.read(&mut buffer).await.unwrap();
-            if read == 0 { break }
-            count += read;
-            println!("Read {read}");
-        }
-        println!("Read {count} bytes");
-        response_writer.write_response(request.body_connection.finalize().await?, response::Response::ok("OTA Upload ok")).await
+        let reader = request.body_connection.body().reader();
+        println!("Starting OTA update...");
+        ota_begin(reader).await.unwrap();
+        println!("OTA update finished, resetting...");
+        software_reset();
+        loop {}
+        // response_writer.write_response(request.body_connection.finalize().await?, response::Response::ok("OTA Upload ok")).await
     }
 }

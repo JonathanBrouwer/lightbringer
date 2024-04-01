@@ -18,6 +18,7 @@ use esp_println::println;
 use crate::wifi::setup_wifi;
 
 use crate::http::setup_http_server;
+use crate::ota::{ota_accept, read_ota};
 
 #[main]
 async fn main(spawner: Spawner) {
@@ -32,6 +33,11 @@ async fn main(spawner: Spawner) {
     // Setup http
     let stack = setup_wifi(peripherals.SYSTIMER, peripherals.RNG, system.radio_clock_control, &clocks, peripherals.WIFI, spawner).await;
     setup_http_server(stack, spawner).await;
+    
+    println!("OTA DATA: {}", read_ota());
+    
+    // Accept ota
+    ota_accept();
 
     println!("Running...")
 }
