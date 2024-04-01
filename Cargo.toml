@@ -19,6 +19,7 @@ esp-partition-table = "0.1.1"
 embedded-storage = "0.3"
 embedded-hal-async = "1.0.0"
 embedded-io-async = "0.6.1"
+embassy-futures = "0.1.1"
 
 ## Embassy
 embassy-executor   = { version = "0.5.0", features = ["nightly"] }
@@ -47,10 +48,6 @@ embassy-net = { version = "0.4.0", features = [
 static_cell = { version = "2.0.0", features = ["nightly"] }
 
 # HTTP
-smoltcp = { version = "0.11.0", default-features = false, features = [
-    "medium-ethernet",
-    "socket-raw",
-] }
 picoserve = { version = "0.10.2", features = ["embassy"] }
 
 [patch.crates-io]

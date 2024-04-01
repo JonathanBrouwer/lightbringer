@@ -13,6 +13,7 @@ use static_cell::make_static;
 
 const SSID: &str = "Jonathan's Tennisnet";
 const PASSWORD: &str = "nahtanoj";
+const MAX_SOCKETS: usize = 16;
 
 pub type WifiStack = &'static Stack<WifiDevice<'static, WifiStaDevice>>;
 
@@ -36,7 +37,7 @@ pub async fn setup_wifi(systimer: SYSTIMER, rng: RNG, radio: RadioClockControl, 
     let stack = &*make_static!(Stack::new(
         wifi_interface,
         config,
-        make_static!(StackResources::<3>::new()),
+        make_static!(StackResources::<MAX_SOCKETS>::new()),
         rng.random() as u64
     ));
     spawner.spawn(net_task(&stack)).ok();

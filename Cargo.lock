@@ -866,6 +866,7 @@ name = "lightbringer"
 version = "0.1.0"
 dependencies = [
  "embassy-executor",
+ "embassy-futures",
  "embassy-net",
  "embassy-net-driver",
  "embassy-sync",
@@ -882,7 +883,6 @@ dependencies = [
  "esp-wifi",
  "heapless",
  "picoserve",
- "smoltcp",
  "static_cell",
 ]
 
