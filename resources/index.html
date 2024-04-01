@@ -24,6 +24,8 @@ var pos1 = 0;
 var pos2 = 0;
 var pos3 = 0;
 var pos4 = 0;
+var lastSend = 0;
+const minSendDelay = 20;
 
 const socketUrl = "/ws";
 
@@ -154,7 +156,11 @@ function elementDrag(e) {
   selector.style.backgroundColor = posToHex(x, y);
 
   // push new TB to lamp
-  pushColor(x, y);
+  time = Date.now()
+  if (time > lastSend + minSendDelay) {
+    lastSend = time;
+    pushColor(x, y);
+  }
 }
 
 const rect = swatch.getBoundingClientRect();
