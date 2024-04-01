@@ -1,3 +1,4 @@
+use core::fmt::{Display, Formatter, Write};
 use core::result::Result;
 use crc::{Algorithm, Crc};
 use embedded_io_async::{ErrorType, Read};
@@ -5,6 +6,7 @@ use esp_partition_table::{PartitionType, DataPartitionType, PartitionEntry, AppP
 use esp_storage::FlashStorage;
 use crate::partitions::find_partition_type;
 use embedded_storage::{ReadStorage, Storage};
+use esp_println::println;
 use crate::ota::EspOTAState::{EspOtaImgAborted, EspOtaImgInvalid, EspOtaImgNew, EspOtaImgPendingVerify, EspOtaImgUndefined, EspOtaImgValid};
 
 /// Errors that may occur during an OTA update
@@ -63,6 +65,7 @@ pub fn ota_valid() -> bool {
     }
 }
 
+/// Read from ota data partition
 fn read_ota() -> EspOTAData {
     let ota_data = find_ota_data();
     let mut flash = FlashStorage::new();
@@ -83,6 +86,7 @@ fn read_ota() -> EspOTAData {
     unreachable!("OTA data corrupted") // TODO
 }
 
+/// Write to ota data partition
 fn write_ota(data: EspOTAData) {
     let ota_data = find_ota_data();
     let mut flash = FlashStorage::new();
@@ -147,6 +151,16 @@ struct EspOTAData {
     label: [u8; 20],
     state: EspOTAState,
     crc: u32,
+}
+
+impl Display for EspOTAData {
+    fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
+        write!(f, "EspOTAData {{ seq: {}, label: {:x?}, state: {:?}, crc: 0x{:08x} }}",
+               self.seq,
+               self.label,
+               self.state,
+               self.crc)
+    }
 }
 
 impl TryFrom<[u8;32]> for EspOTAData {
@@ -231,6 +245,6 @@ const CRC_32_ESP: Algorithm<u32> = Algorithm {
     refin: true,
     refout: true,
     xorout: 0,
-    check: 0x0000,
-    residue: 0x0000
+    check: 0,
+    residue: 0
 };
