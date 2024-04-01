@@ -50,6 +50,9 @@ static_cell = { version = "2.0.0", features = ["nightly"] }
 # HTTP
 picoserve = { version = "0.10.2", features = ["embassy"] }
 
+# OTA
+crc = "3.0.1"
+
 [patch.crates-io]
 # Fixes https://github.com/embassy-rs/embassy/issues/2709
 # Fixes https://github.com/rust-lang/rust/issues/122775

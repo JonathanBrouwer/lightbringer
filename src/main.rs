@@ -4,6 +4,8 @@
 #![feature(impl_trait_in_assoc_type)]
 
 mod wifi;
+mod ota;
+mod partitions;
 mod http;
 mod value_synchronizer;
 mod web_app;
