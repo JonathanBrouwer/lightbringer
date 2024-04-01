@@ -41,14 +41,14 @@ pub async fn ota_begin<R: Read>(mut new_data: R) -> Result<(), OtaError<R::Error
     let mut data_written = 0;
     let mut flash = FlashStorage::new();
 
-    while let Some(read_len) = new_data.read(&mut data_buffer).await {
+    while let Ok(read_len) = new_data.read(&mut data_buffer).await { // TODO: propagate the read errors
         if read_len == 0 {
             break;
         }
         if data_written + read_len > ota_app.size {
             return Err(OtaError::OutOfSpace)
         }
-        flash.write(ota_app.offset+data_written, new_data[0..read_len]).unwrap(); // TODO: propagate Read errors
+        flash.write(ota_app.offset+data_written as u32, &data_buffer[0..read_len]).unwrap(); // TODO
         data_written += read_len;
     }
 
@@ -147,7 +147,7 @@ impl TryFrom<u32> for EspOTAState {
     fn try_from(value: u32) -> Result<Self, Self::Error> {
         match value {
             0 => Ok(Self::New),
-            1 => Ok(Self::Verify),
+            1 => Ok(Self::PendingVerify),
             2 => Ok(Self::Valid),
             3 => Ok(Self::Invalid),
             4 => Ok(Self::Aborted),
@@ -160,12 +160,12 @@ impl TryFrom<u32> for EspOTAState {
 impl From<EspOTAState> for u32 {
     fn from(value: EspOTAState) -> Self {
         match value {
-            New => 0,
-            PendingVerify => 1,
-            Valid => 2,
-            Invalid => 3,
-            Aborted => 4,
-            Undefined => u32::MAX,
+            EspOTAState::New => 0,
+            EspOTAState::PendingVerify => 1,
+            EspOTAState::Valid => 2,
+            EspOTAState::Invalid => 3,
+            EspOTAState::Aborted => 4,
+            EspOTAState::Undefined => u32::MAX,
         }
     }
 }
@@ -262,15 +262,15 @@ fn find_booted_ota_seq() -> u8 {
 
 /// ESP32 CRC32 implementation (`esp_rom_crc32_le`)
 /// This has only been verified to be identical with one input-output pair so use with caution.
-fn esp_crc32(bytes: &[u8]) -> u32 {
+fn esp_crc32(bytes: &[u8;4]) -> u32 {
 
     /// TODO: can this be a one-liner?
-    let mut cloned_bytes = bytes.clone();
-    for b in cloned_bytes.iter_mut() {
-        *b = !*b;
+    let mut buffer = [0;4];
+    for (i,byte) in bytes.iter().enumerate() {
+        buffer[i] = !*byte;
     }
 
-    !Crc::<u32>::new(&CRC_32_ESP).checksum(cloned_bytes)
+    !Crc::<u32>::new(&CRC_32_ESP).checksum(&buffer)
 }
 
 const CRC_32_ESP: Algorithm<u32> = Algorithm {
