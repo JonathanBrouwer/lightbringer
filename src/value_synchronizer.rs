@@ -56,7 +56,7 @@ impl<const WATCHER_COUNT: usize, M: RawMutex, T> ValueSynchronizer<WATCHER_COUNT
 
 pub struct Watcher<'a, const WATCHER_COUNT: usize, M: RawMutex, T> {
     synchronizer: &'a ValueSynchronizer<WATCHER_COUNT, M, T>,
-    last_counter: usize,
+    last_counter: usize, //TODO is this necessary
 }
 
 impl<'a, const WATCHER_COUNT: usize, M: RawMutex, T> Watcher<'a, WATCHER_COUNT, M, T> {

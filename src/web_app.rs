@@ -1,4 +1,3 @@
-use core::ptr::read_unaligned;
 use embassy_futures::select::{Either, select};
 use embassy_sync::blocking_mutex::raw::NoopRawMutex;
 use embedded_io_async::{Read, Write};
@@ -8,15 +7,14 @@ use picoserve::{response, ResponseSent, Router};
 use picoserve::request::Request;
 use picoserve::response::{ResponseWriter, WebSocketUpgrade};
 use picoserve::response::ws::{Message, SocketRx, SocketTx, WebSocketCallback};
-use picoserve::routing::{get, PathRouter, post, RequestHandlerFunction, RequestHandlerService};
+use picoserve::routing::{get, PathRouter, RequestHandlerService};
 use static_cell::make_static;
 use crate::value_synchronizer::ValueSynchronizer;
-use crate::http::MAX_CONNECTIONS;
+use crate::http::MAX_LISTENERS;
 use crate::ota::ota_begin;
 
 pub type AppRouter = impl PathRouter;
-pub fn make_app() -> Router<AppRouter> {
-    let data: &'static _ = make_static!(ValueSynchronizer::new(InputMessage::default()));
+pub fn make_app(data: &'static ValueSynchronizer<MAX_LISTENERS, NoopRawMutex, InputMessage>) -> Router<AppRouter> {
     picoserve::Router::new()
         .route("/", get(|| async move{ response::File::html(include_str!("../resources/index.html")) }))
         .route("/ota",
@@ -32,14 +30,14 @@ pub fn make_app() -> Router<AppRouter> {
 }
 
 pub struct ColorHandler {
-    color: &'static ValueSynchronizer<MAX_CONNECTIONS, NoopRawMutex, InputMessage>,
+    color: &'static ValueSynchronizer<MAX_LISTENERS, NoopRawMutex, InputMessage>,
 }
 
 #[derive(Copy, Clone, Debug, Default)]
 pub struct InputMessage {
     save: bool,
-    cold: u16,
-    warm: u16,
+    pub cold: u16,
+    pub warm: u16,
     x: u16,
     y: u16,
 }

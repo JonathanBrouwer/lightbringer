@@ -2,14 +2,14 @@ use embassy_executor::Spawner;
 use embassy_time::Duration;
 use picoserve::*;
 use static_cell::make_static;
-use crate::web_app::{AppRouter, make_app};
+use crate::web_app::{AppRouter};
 use crate::wifi::WifiStack;
 
 const PORT: u16 = 80;
-pub(crate) const MAX_CONNECTIONS: usize = 8;
+const MAX_CONNECTIONS: usize = 8;
+pub(crate) const MAX_LISTENERS: usize = MAX_CONNECTIONS + 4;
 
-pub async fn setup_http_server(stack: WifiStack, spawner: Spawner) {
-    let app = make_static!(make_app());
+pub async fn setup_http_server(stack: WifiStack, spawner: Spawner, app: &'static Router<AppRouter>) {
     let config = make_static!(Config::new(Timeouts {
         start_read_request: None,
         read_request: None,
