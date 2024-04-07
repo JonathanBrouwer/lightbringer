@@ -40,8 +40,8 @@ async fn main(spawner: Spawner) {
     let peripherals = Peripherals::take();
     let system = peripherals.SYSTEM.split();
     let clocks: &'static Clocks = make_static!(ClockControl::max(system.clock_control).freeze());
-    let timer_group0 = TimerGroup::new(peripherals.TIMG0, &clocks);
-    embassy::init(&clocks, timer_group0);
+    let timer_group0 = TimerGroup::new(peripherals.TIMG0, clocks);
+    embassy::init(clocks, timer_group0);
 
     // Setup app
     let value: &'static _ = make_static!(ValueSynchronizer::new(InputMessage::default()));
@@ -53,7 +53,7 @@ async fn main(spawner: Spawner) {
         value,
         io.pins.gpio12,
         io.pins.gpio13,
-        &clocks,
+        clocks,
         peripherals.LEDC,
         spawner,
     );
@@ -63,7 +63,7 @@ async fn main(spawner: Spawner) {
         peripherals.SYSTIMER,
         peripherals.RNG,
         system.radio_clock_control,
-        &clocks,
+        clocks,
         peripherals.WIFI,
         spawner,
     )

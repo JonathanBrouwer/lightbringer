@@ -31,7 +31,7 @@ pub async fn setup_wifi(
     let timer = SystemTimer::new(systimer).alarm0;
     let mut rng = Rng::new(rng);
 
-    let init = initialize(EspWifiInitFor::Wifi, timer, rng, radio, &clocks).unwrap();
+    let init = initialize(EspWifiInitFor::Wifi, timer, rng, radio, clocks).unwrap();
     let (wifi_interface, controller) =
         esp_wifi::wifi::new_with_mode(&init, wifi, WifiStaDevice).unwrap();
 
@@ -43,7 +43,7 @@ pub async fn setup_wifi(
         make_static!(StackResources::<MAX_SOCKETS>::new()),
         rng.random() as u64
     ));
-    spawner.spawn(net_task(&stack)).ok();
+    spawner.spawn(net_task(stack)).ok();
     spawner.spawn(connect_task(controller)).ok();
 
     loop {
@@ -70,14 +70,11 @@ pub async fn setup_wifi(
 async fn connect_task(mut controller: WifiController<'static>) {
     println!("Start connection task...");
     loop {
-        match esp_wifi::wifi::get_wifi_state() {
-            WifiState::StaConnected => {
-                // wait until we're no longer connected
-                controller.wait_for_event(WifiEvent::StaDisconnected).await;
-                println!("Disconnected from wifi, waiting 5 seconds before reconnecting...");
-                Timer::after(Duration::from_millis(5000)).await
-            }
-            _ => {}
+        if let WifiState::StaConnected = esp_wifi::wifi::get_wifi_state() {
+            // wait until we're no longer connected
+            controller.wait_for_event(WifiEvent::StaDisconnected).await;
+            println!("Disconnected from wifi, waiting 5 seconds before reconnecting...");
+            Timer::after(Duration::from_millis(5000)).await
         }
         if !matches!(controller.is_started(), Ok(true)) {
             let client_config = Configuration::Client(ClientConfiguration {

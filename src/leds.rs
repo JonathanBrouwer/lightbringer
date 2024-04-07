@@ -1,25 +1,20 @@
 use crate::http::MAX_LISTENERS;
 use crate::value_synchronizer::ValueSynchronizer;
-use crate::web_app::{AppRouter, InputMessage};
+use crate::web_app::{InputMessage};
 use embassy_executor::Spawner;
 use embassy_sync::blocking_mutex::raw::NoopRawMutex;
-use embassy_time::Duration;
 use esp_hal::clock::Clocks;
 use esp_hal::gpio::{GpioPin, Output, PushPull, Unknown};
 use esp_hal::ledc::channel::config::PinConfig;
 use esp_hal::ledc::channel::Channel;
 use esp_hal::ledc::timer::config::Duty;
 use esp_hal::ledc::timer::config::Duty::Duty12Bit;
-use esp_hal::ledc::timer::TimerSpeed;
 use esp_hal::ledc::{channel, timer, LSGlobalClkSource, LowSpeed, LEDC};
-use esp_hal::peripherals::TIMG1;
 use esp_hal::prelude::{
-    _embedded_hal_digital_v2_OutputPin, _esp_hal_ledc_channel_ChannelHW,
+    _esp_hal_ledc_channel_ChannelHW,
     _esp_hal_ledc_channel_ChannelIFace, _esp_hal_ledc_timer_TimerIFace, _fugit_RateExtU32,
 };
-use esp_hal::timer::TimerGroup;
 use esp_println::println;
-use picoserve::{listen_and_serve, Config, Router};
 use static_cell::make_static;
 
 pub const PIN_RED: u8 = 12;
@@ -37,7 +32,7 @@ pub fn setup_leds(
     let red: &'static mut _ = make_static!(red.into_push_pull_output());
     let blue: &'static mut _ = make_static!(blue.into_push_pull_output());
 
-    let ledc: &'static mut LEDC = make_static!(LEDC::new(ledc, &clocks,));
+    let ledc: &'static mut LEDC = make_static!(LEDC::new(ledc, clocks,));
     ledc.set_global_slow_clock(LSGlobalClkSource::APBClk);
 
     let timer: &'static mut _ = make_static!(ledc.get_timer::<LowSpeed>(timer::Number::Timer1));

@@ -11,7 +11,6 @@ use picoserve::response::ws::{Message, SocketRx, SocketTx, WebSocketCallback};
 use picoserve::response::{ResponseWriter, WebSocketUpgrade};
 use picoserve::routing::{get, PathRouter, RequestHandlerService};
 use picoserve::{response, ResponseSent, Router};
-use static_cell::make_static;
 
 pub type AppRouter = impl PathRouter;
 pub fn make_app(
@@ -131,6 +130,7 @@ impl RequestHandlerService<()> for OtaHandler {
         ota_begin(reader).await.unwrap();
         println!("OTA update finished, resetting...");
         software_reset();
+        #[allow(clippy::empty_loop)]
         loop {}
         // response_writer.write_response(request.body_connection.finalize().await?, response::Response::ok("OTA Upload ok")).await
     }

@@ -1,9 +1,8 @@
 use crate::partitions::find_partition_type;
 use core::fmt::{Display, Formatter, Write};
-use core::ptr::read;
 use core::result::Result;
 use crc::{Algorithm, Crc};
-use embedded_io_async::{ErrorType, Read};
+use embedded_io_async::{Read};
 use embedded_storage::{ReadStorage, Storage};
 use esp_partition_table::{AppPartitionType, DataPartitionType, PartitionEntry, PartitionType};
 use esp_println::println;
@@ -92,11 +91,11 @@ pub fn ota_reject() {
 /// Returns true if this OTA update has been accepted, i.e. with `ota_accept`
 pub fn ota_valid() -> bool {
     let data = read_ota();
-    return match data.state {
+    match data.state {
         EspOTAState::Valid => true,
         EspOTAState::Undefined => true,
         _ => false,
-    };
+    }
 }
 
 /// Read from ota data partition
@@ -124,7 +123,7 @@ pub fn read_ota() -> EspOTAData {
 fn write_ota(data: EspOTAData) {
     let ota_data = find_ota_data();
     let mut flash = FlashStorage::new();
-    let mut buffer: [u8; 32] = data.into();
+    let buffer: [u8; 32] = data.into();
 
     // Write first copy
     flash.write(ota_data.offset, &buffer).unwrap(); //TODO
@@ -218,7 +217,7 @@ impl TryFrom<[u8; 32]> for EspOTAData {
         let state =
             EspOTAState::try_from(u32::from_le_bytes(value[24..28].try_into().unwrap())).unwrap(); //TODO
         let crc = u32::from_le_bytes(value[28..32].try_into().unwrap()); //TODO
-        return if crc == esp_crc32(&seq.to_le_bytes()) {
+        if crc == esp_crc32(&seq.to_le_bytes()) {
             Ok(Self {
                 seq,
                 label,
@@ -227,19 +226,19 @@ impl TryFrom<[u8; 32]> for EspOTAData {
             })
         } else {
             Err(()) //TODO
-        };
+        }
     }
 }
 
 impl From<EspOTAData> for [u8; 32] {
     fn from(value: EspOTAData) -> Self {
         let mut ret = [0; 32];
-        ret[0..4].copy_from_slice(&(value.seq as u32).to_le_bytes());
+        ret[0..4].copy_from_slice(&value.seq.to_le_bytes());
         ret[4..24].copy_from_slice(&value.label);
         ret[24..28].copy_from_slice(&u32::to_le_bytes(value.state.into()));
-        let crc = esp_crc32(&(value.seq as u32).to_le_bytes());
+        let crc = esp_crc32(&value.seq.to_le_bytes());
         ret[28..32].copy_from_slice(&crc.to_le_bytes());
-        return ret;
+        ret
     }
 }
 
@@ -251,7 +250,7 @@ fn find_ota_data() -> PartitionEntry {
 fn find_ota(seq: u8) -> PartitionEntry {
     let ota_part = find_partition_type(PartitionType::App(AppPartitionType::Ota(seq))).unwrap(); //TODO
 
-    return ota_part;
+    ota_part
 }
 
 /// Find ota sequence that was booted

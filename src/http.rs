@@ -38,7 +38,7 @@ async fn web_task(
 
     listen_and_serve(
         id,
-        &app,
+        app,
         config,
         stack,
         PORT,
