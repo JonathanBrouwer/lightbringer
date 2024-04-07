@@ -3,12 +3,15 @@ use embassy_net::{Config, Stack, StackResources};
 use embassy_time::{Duration, Timer};
 use esp_hal::clock::Clocks;
 use esp_hal::peripherals::{RNG, SYSTIMER, WIFI};
-use esp_hal::Rng;
 use esp_hal::system::RadioClockControl;
 use esp_hal::systimer::SystemTimer;
+use esp_hal::Rng;
 use esp_println::println;
-use esp_wifi::{EspWifiInitFor, initialize};
-use esp_wifi::wifi::{ClientConfiguration, Configuration, WifiController, WifiDevice, WifiEvent, WifiStaDevice, WifiState};
+use esp_wifi::wifi::{
+    ClientConfiguration, Configuration, WifiController, WifiDevice, WifiEvent, WifiStaDevice,
+    WifiState,
+};
+use esp_wifi::{initialize, EspWifiInitFor};
 use static_cell::make_static;
 
 const SSID: &str = "Jonathan's Tennisnet";
@@ -17,18 +20,18 @@ const MAX_SOCKETS: usize = 16;
 
 pub type WifiStack = &'static Stack<WifiDevice<'static, WifiStaDevice>>;
 
-pub async fn setup_wifi(systimer: SYSTIMER, rng: RNG, radio: RadioClockControl, clocks: &Clocks<'_>, wifi: WIFI, spawner: Spawner) -> WifiStack {
+pub async fn setup_wifi(
+    systimer: SYSTIMER,
+    rng: RNG,
+    radio: RadioClockControl,
+    clocks: &Clocks<'_>,
+    wifi: WIFI,
+    spawner: Spawner,
+) -> WifiStack {
     let timer = SystemTimer::new(systimer).alarm0;
     let mut rng = Rng::new(rng);
 
-    let init = initialize(
-        EspWifiInitFor::Wifi,
-        timer,
-        rng,
-        radio,
-        &clocks,
-    )
-        .unwrap();
+    let init = initialize(EspWifiInitFor::Wifi, timer, rng, radio, &clocks).unwrap();
     let (wifi_interface, controller) =
         esp_wifi::wifi::new_with_mode(&init, wifi, WifiStaDevice).unwrap();
 

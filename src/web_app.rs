@@ -1,32 +1,40 @@
-use embassy_futures::select::{Either, select};
+use crate::http::MAX_LISTENERS;
+use crate::ota::ota_begin;
+use crate::value_synchronizer::ValueSynchronizer;
+use embassy_futures::select::{select, Either};
 use embassy_sync::blocking_mutex::raw::NoopRawMutex;
 use embedded_io_async::{Read, Write};
 use esp_hal::reset::software_reset;
 use esp_println::println;
-use picoserve::{response, ResponseSent, Router};
 use picoserve::request::Request;
-use picoserve::response::{ResponseWriter, WebSocketUpgrade};
 use picoserve::response::ws::{Message, SocketRx, SocketTx, WebSocketCallback};
+use picoserve::response::{ResponseWriter, WebSocketUpgrade};
 use picoserve::routing::{get, PathRouter, RequestHandlerService};
+use picoserve::{response, ResponseSent, Router};
 use static_cell::make_static;
-use crate::value_synchronizer::ValueSynchronizer;
-use crate::http::MAX_LISTENERS;
-use crate::ota::ota_begin;
 
 pub type AppRouter = impl PathRouter;
-pub fn make_app(data: &'static ValueSynchronizer<MAX_LISTENERS, NoopRawMutex, InputMessage>) -> Router<AppRouter> {
+pub fn make_app(
+    data: &'static ValueSynchronizer<MAX_LISTENERS, NoopRawMutex, InputMessage>,
+) -> Router<AppRouter> {
     picoserve::Router::new()
-        .route("/", get(|| async move{ response::File::html(include_str!("../resources/index.html")) }))
-        .route("/ota",
-               get(|| async move{ response::File::html(include_str!("../resources/ota.html")) })
-                   .post_service(OtaHandler)
+        .route(
+            "/",
+            get(|| async move { response::File::html(include_str!("../resources/index.html")) }),
         )
-        .route("/style.css", get(|| async move{ response::File::css(include_str!("../resources/style.css")) }))
-        .route("/ws", get(move |update: WebSocketUpgrade| {
-            update.on_upgrade(ColorHandler {
-                color: data,
-            })
-        }))
+        .route(
+            "/ota",
+            get(|| async move { response::File::html(include_str!("../resources/ota.html")) })
+                .post_service(OtaHandler),
+        )
+        .route(
+            "/style.css",
+            get(|| async move { response::File::css(include_str!("../resources/style.css")) }),
+        )
+        .route(
+            "/ws",
+            get(move |update: WebSocketUpgrade| update.on_upgrade(ColorHandler { color: data })),
+        )
 }
 
 pub struct ColorHandler {
@@ -63,34 +71,36 @@ impl InputMessage {
 }
 
 impl WebSocketCallback for ColorHandler {
-    async fn run<R: Read, W: Write<Error=R::Error>>(self, mut rx: SocketRx<R>, mut tx: SocketTx<W>) -> Result<(), W::Error> {
+    async fn run<R: Read, W: Write<Error = R::Error>>(
+        self,
+        mut rx: SocketRx<R>,
+        mut tx: SocketTx<W>,
+    ) -> Result<(), W::Error> {
         let mut message_buffer = [0u8; 16];
         let mut watcher = self.color.watch();
 
         // Send initial message
         println!("Websocket opened, sending initial message");
-        tx.send_binary(&self.color.read_clone().into_bytes()).await?;
+        tx.send_binary(&self.color.read_clone().into_bytes())
+            .await?;
 
         loop {
-            match select(
-                rx.next_message(&mut message_buffer),
-                watcher.read(),
-            ).await {
+            match select(rx.next_message(&mut message_buffer), watcher.read()).await {
                 Either::First(message) => {
                     let bytes = match message.unwrap() {
                         Message::Binary(bytes) => bytes,
                         Message::Close(_) => {
                             println!("Websocket closed");
-                            return Ok(())
-                        },
+                            return Ok(());
+                        }
                         message => {
                             println!("Received invalid WS message: {message:?}");
-                            return Ok(())
-                        },
+                            return Ok(());
+                        }
                     };
                     let Ok(bytes): Result<&[u8; 10], _> = bytes.try_into() else {
                         println!("Received invalid WS bytes: {bytes:?}");
-                        return Ok(())
+                        return Ok(());
                     };
                     let message = InputMessage::from_bytes(bytes);
                     println!("Received message: {message:?}");
@@ -109,7 +119,13 @@ impl WebSocketCallback for ColorHandler {
 struct OtaHandler;
 
 impl RequestHandlerService<()> for OtaHandler {
-    async fn call_request_handler_service<R: Read, W: ResponseWriter<Error=R::Error>>(&self, _state: &(), _path_parameters: (), mut request: Request<'_, R>, response_writer: W) -> Result<ResponseSent, W::Error> {
+    async fn call_request_handler_service<R: Read, W: ResponseWriter<Error = R::Error>>(
+        &self,
+        _state: &(),
+        _path_parameters: (),
+        mut request: Request<'_, R>,
+        response_writer: W,
+    ) -> Result<ResponseSent, W::Error> {
         let reader = request.body_connection.body().reader();
         println!("Starting OTA update...");
         ota_begin(reader).await.unwrap();

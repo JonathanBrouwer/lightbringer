@@ -7,7 +7,9 @@ use embassy_sync::blocking_mutex::Mutex;
 use embassy_sync::blocking_mutex::raw::RawMutex;
 use embassy_sync::waitqueue::MultiWakerRegistration;
 
-pub struct ValueSynchronizer<const WATCHER_COUNT: usize, M: RawMutex, T>(Mutex<M, RefCell<ValueSynchronizerData<WATCHER_COUNT, T>>>);
+pub struct ValueSynchronizer<const WATCHER_COUNT: usize, M: RawMutex, T>(
+    Mutex<M, RefCell<ValueSynchronizerData<WATCHER_COUNT, T>>>,
+);
 
 struct ValueSynchronizerData<const WATCHER_COUNT: usize, T> {
     value: T,
@@ -29,13 +31,16 @@ impl<const WATCHER_COUNT: usize, M: RawMutex, T> ValueSynchronizer<WATCHER_COUNT
         self.0.lock(|v| f(&v.borrow().value))
     }
 
-    pub fn read_clone(&self) -> T where T: Clone {
+    pub fn read_clone(&self) -> T
+    where
+        T: Clone,
+    {
         self.read(|v| v.clone())
     }
 
     pub fn update(&self, f: impl FnOnce(&mut T)) {
         self.0.lock(|inner| {
-           let mut s = inner.borrow_mut();
+            let mut s = inner.borrow_mut();
             f(&mut s.value);
             s.counter += 1;
             s.wakers.wake()
@@ -64,7 +69,10 @@ impl<'a, const WATCHER_COUNT: usize, M: RawMutex, T> Watcher<'a, WATCHER_COUNT, 
     //     WatcherFuture(self)
     // }
 
-    pub fn read<'s>(&'s mut self) -> ReaderFuture<'s, 'a, WATCHER_COUNT, M, T> where T: Clone {
+    pub fn read<'s>(&'s mut self) -> ReaderFuture<'s, 'a, WATCHER_COUNT, M, T>
+    where
+        T: Clone,
+    {
         ReaderFuture(self)
     }
 
@@ -95,9 +103,13 @@ impl<'a, const WATCHER_COUNT: usize, M: RawMutex, T> Watcher<'a, WATCHER_COUNT, 
 //     }
 // }
 
-pub struct ReaderFuture<'s, 'a, const WATCHER_COUNT: usize, M: RawMutex, T: Clone>(&'s mut Watcher<'a, WATCHER_COUNT, M, T>);
+pub struct ReaderFuture<'s, 'a, const WATCHER_COUNT: usize, M: RawMutex, T: Clone>(
+    &'s mut Watcher<'a, WATCHER_COUNT, M, T>,
+);
 
-impl<'s, 'a, const WATCHER_COUNT: usize, M: RawMutex, T: Clone> Future for ReaderFuture<'s, 'a, WATCHER_COUNT, M, T> {
+impl<'s, 'a, const WATCHER_COUNT: usize, M: RawMutex, T: Clone> Future
+    for ReaderFuture<'s, 'a, WATCHER_COUNT, M, T>
+{
     type Output = T;
 
     fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {

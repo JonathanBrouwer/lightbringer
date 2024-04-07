@@ -3,29 +3,35 @@
 #![feature(type_alias_impl_trait)]
 #![feature(impl_trait_in_assoc_type)]
 
-mod wifi;
+mod http;
+mod leds;
 mod ota;
 mod partitions;
-mod http;
 mod value_synchronizer;
 mod web_app;
-mod leds;
+mod wifi;
 
+use crate::wifi::setup_wifi;
 use embassy_executor::Spawner;
 use esp_backtrace as _;
-use esp_hal::{clock::ClockControl, embassy::{self}, IO, peripherals::Peripherals, prelude::*};
 use esp_hal::clock::Clocks;
 use esp_hal::timer::TimerGroup;
+use esp_hal::{
+    clock::ClockControl,
+    embassy::{self},
+    peripherals::Peripherals,
+    prelude::*,
+    IO,
+};
 use esp_println::println;
 use picoserve::Router;
 use static_cell::make_static;
-use crate::wifi::setup_wifi;
 
 use crate::http::setup_http_server;
 use crate::leds::setup_leds;
 use crate::ota::{ota_accept, read_ota};
 use crate::value_synchronizer::ValueSynchronizer;
-use crate::web_app::{AppRouter, InputMessage, make_app};
+use crate::web_app::{make_app, AppRouter, InputMessage};
 
 #[main]
 async fn main(spawner: Spawner) {
@@ -43,17 +49,31 @@ async fn main(spawner: Spawner) {
 
     // Setup leds
     let io = IO::new(peripherals.GPIO, peripherals.IO_MUX);
-    setup_leds(value, io.pins.gpio12, io.pins.gpio13, &clocks, peripherals.LEDC, spawner);
+    setup_leds(
+        value,
+        io.pins.gpio12,
+        io.pins.gpio13,
+        &clocks,
+        peripherals.LEDC,
+        spawner,
+    );
 
     // Setup http
-    let stack = setup_wifi(peripherals.SYSTIMER, peripherals.RNG, system.radio_clock_control, &clocks, peripherals.WIFI, spawner).await;
+    let stack = setup_wifi(
+        peripherals.SYSTIMER,
+        peripherals.RNG,
+        system.radio_clock_control,
+        &clocks,
+        peripherals.WIFI,
+        spawner,
+    )
+    .await;
     setup_http_server(stack, spawner, app).await;
-    
+
     println!("OTA DATA: {}", read_ota());
-    
+
     // Accept ota
     ota_accept();
 
     println!("Running...")
 }
-

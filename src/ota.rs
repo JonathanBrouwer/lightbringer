@@ -1,16 +1,16 @@
+use crate::partitions::find_partition_type;
 use core::fmt::{Display, Formatter, Write};
 use core::ptr::read;
 use core::result::Result;
 use crc::{Algorithm, Crc};
 use embedded_io_async::{ErrorType, Read};
-use esp_partition_table::{PartitionType, DataPartitionType, PartitionEntry, AppPartitionType};
-use esp_storage::FlashStorage;
-use crate::partitions::find_partition_type;
 use embedded_storage::{ReadStorage, Storage};
+use esp_partition_table::{AppPartitionType, DataPartitionType, PartitionEntry, PartitionType};
 use esp_println::println;
+use esp_storage::FlashStorage;
 
 /// Errors that may occur during an OTA update
-#[derive(Debug,Clone)]
+#[derive(Debug, Clone)]
 pub enum OtaError<T> {
     /// The image that was booted hasn't been verified as working yet,
     /// so it may not start an update before being verified.
@@ -43,20 +43,26 @@ pub async fn ota_begin<R: Read>(mut new_data: R) -> Result<(), OtaError<R::Error
     let mut data_written = 0;
     let mut flash = FlashStorage::new();
 
-    while let Ok(read_len) = new_data.read(&mut data_buffer).await { // TODO: propagate the read errors
+    while let Ok(read_len) = new_data.read(&mut data_buffer).await {
+        // TODO: propagate the read errors
         if read_len == 0 {
             break;
         }
         if data_written + read_len > ota_app.size {
-            return Err(OtaError::OutOfSpace)
+            return Err(OtaError::OutOfSpace);
         }
         println!("Wrote {data_written} so far...");
-        flash.write(ota_app.offset+data_written as u32, &data_buffer[0..read_len]).unwrap(); // TODO
+        flash
+            .write(
+                ota_app.offset + data_written as u32,
+                &data_buffer[0..read_len],
+            )
+            .unwrap(); // TODO
         data_written += read_len;
     }
 
     // Write new OTA data boot entry
-    let data = EspOTAData::new(new_seq, [0xED;20]);
+    let data = EspOTAData::new(new_seq, [0xED; 20]);
     write_ota(data);
 
     Ok(())
@@ -89,8 +95,8 @@ pub fn ota_valid() -> bool {
     return match data.state {
         EspOTAState::Valid => true,
         EspOTAState::Undefined => true,
-        _ => false
-    }
+        _ => false,
+    };
 }
 
 /// Read from ota data partition
@@ -102,13 +108,13 @@ pub fn read_ota() -> EspOTAData {
     // Try first copy
     flash.read(ota_data.offset, &mut buffer).unwrap(); // TODO
     if let Ok(data) = EspOTAData::try_from(buffer) {
-        return data
+        return data;
     }
 
     // First copy is corrupted, try second one
-    flash.read(ota_data.offset+0x1000, &mut buffer).unwrap(); // TODO
+    flash.read(ota_data.offset + 0x1000, &mut buffer).unwrap(); // TODO
     if let Ok(data) = EspOTAData::try_from(buffer) {
-        return data
+        return data;
     }
 
     unreachable!("OTA data corrupted") // TODO
@@ -118,13 +124,13 @@ pub fn read_ota() -> EspOTAData {
 fn write_ota(data: EspOTAData) {
     let ota_data = find_ota_data();
     let mut flash = FlashStorage::new();
-    let mut buffer:[u8;32] = data.into();
+    let mut buffer: [u8; 32] = data.into();
 
     // Write first copy
     flash.write(ota_data.offset, &buffer).unwrap(); //TODO
 
     // Write second copy
-    flash.write(ota_data.offset+0x1000, &buffer).unwrap(); //TODO
+    flash.write(ota_data.offset + 0x1000, &buffer).unwrap(); //TODO
 }
 
 /// Copied from esp-idf
@@ -134,7 +140,7 @@ fn write_ota(data: EspOTAData) {
 /// -`Invalid`: App was confirmed as non-workable. This app will not be selected to boot at all.
 /// -`Aborted`: App could not confirm the workable or non-workable. In bootloader IMG_PENDING_VERIFY state will be changed to IMG_ABORTED. This app will not be selected to boot at all.
 /// -`Undefined`: Undefined. App can boot and work without limits.
-#[derive(Debug,Copy,Clone,Eq,PartialEq)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
 enum EspOTAState {
     New,
     PendingVerify,
@@ -155,7 +161,7 @@ impl TryFrom<u32> for EspOTAState {
             3 => Ok(Self::Invalid),
             4 => Ok(Self::Aborted),
             u32::MAX => Ok(Self::Undefined),
-            _ => Err(())
+            _ => Err(()),
         }
     }
 }
@@ -196,37 +202,38 @@ impl EspOTAData {
 
 impl Display for EspOTAData {
     fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
-        write!(f, "EspOTAData {{ seq: {}, label: {:x?}, state: {:?}, crc: 0x{:08x} }}",
-               self.seq,
-               self.label,
-               self.state,
-               self.crc)
+        write!(
+            f,
+            "EspOTAData {{ seq: {}, label: {:x?}, state: {:?}, crc: 0x{:08x} }}",
+            self.seq, self.label, self.state, self.crc
+        )
     }
 }
 
-impl TryFrom<[u8;32]> for EspOTAData {
+impl TryFrom<[u8; 32]> for EspOTAData {
     type Error = ();
     fn try_from(value: [u8; 32]) -> Result<Self, Self::Error> {
         let seq = u32::from_le_bytes(value[0..4].try_into().unwrap()); //TODO
         let label = value[4..24].try_into().unwrap(); //TODO
-        let state = EspOTAState::try_from(u32::from_le_bytes(value[24..28].try_into().unwrap())).unwrap(); //TODO
+        let state =
+            EspOTAState::try_from(u32::from_le_bytes(value[24..28].try_into().unwrap())).unwrap(); //TODO
         let crc = u32::from_le_bytes(value[28..32].try_into().unwrap()); //TODO
         return if crc == esp_crc32(&seq.to_le_bytes()) {
             Ok(Self {
                 seq,
                 label,
                 state,
-                crc
+                crc,
             })
         } else {
             Err(()) //TODO
-        }
+        };
     }
 }
 
-impl From<EspOTAData> for [u8;32] {
+impl From<EspOTAData> for [u8; 32] {
     fn from(value: EspOTAData) -> Self {
-        let mut ret = [0;32];
+        let mut ret = [0; 32];
         ret[0..4].copy_from_slice(&(value.seq as u32).to_le_bytes());
         ret[4..24].copy_from_slice(&value.label);
         ret[24..28].copy_from_slice(&u32::to_le_bytes(value.state.into()));
@@ -237,21 +244,14 @@ impl From<EspOTAData> for [u8;32] {
 }
 
 fn find_ota_data() -> PartitionEntry {
-    find_partition_type(
-        PartitionType::Data(
-            DataPartitionType::Ota
-        )
-    ).unwrap() //TODO
+    find_partition_type(PartitionType::Data(DataPartitionType::Ota)).unwrap() //TODO
 }
 
 /// Find ota partition with certain sequence number
 fn find_ota(seq: u8) -> PartitionEntry {
-    let ota_part = find_partition_type(
-        PartitionType::App(
-            AppPartitionType::Ota(seq)
-        )).unwrap(); //TODO
+    let ota_part = find_partition_type(PartitionType::App(AppPartitionType::Ota(seq))).unwrap(); //TODO
 
-    return ota_part
+    return ota_part;
 }
 
 /// Find ota sequence that was booted
@@ -264,11 +264,10 @@ fn find_booted_ota_seq() -> u32 {
 
 /// ESP32 CRC32 implementation (`esp_rom_crc32_le`)
 /// This has only been verified to be identical with one input-output pair so use with caution.
-fn esp_crc32(bytes: &[u8;4]) -> u32 {
-
+fn esp_crc32(bytes: &[u8; 4]) -> u32 {
     /// TODO: can this be a one-liner?
-    let mut buffer = [0;4];
-    for (i,byte) in bytes.iter().enumerate() {
+    let mut buffer = [0; 4];
+    for (i, byte) in bytes.iter().enumerate() {
         buffer[i] = !*byte;
     }
 
@@ -283,5 +282,5 @@ const CRC_32_ESP: Algorithm<u32> = Algorithm {
     refout: true,
     xorout: 0,
     check: 0,
-    residue: 0
+    residue: 0,
 };
