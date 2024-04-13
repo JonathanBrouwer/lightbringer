@@ -9,17 +9,14 @@
 <body>
 
 <div class="selectorbb">
-  <div class="selector"></div>
+  <div class="selector" style="display: none"></div>
 </div>
 
 <svg id="swatch" class="swatch" width="100mm" height="100mm" version="1.1" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"><defs><linearGradient id="linearGradient10" x1="50" x2="50" y1="0" y2="100" gradientTransform="translate(1e-6)" gradientUnits="userSpaceOnUse"><stop stop-opacity="0" offset=".14167"/><stop offset="1"/></linearGradient><linearGradient id="linearGradient16" x1="13" x2="87.5" y1="50" y2="50" gradientUnits="userSpaceOnUse"><stop stop-color="#ffad60" offset="0"/><stop stop-color="#ffe6d2" stop-opacity="1" offset=".5"/><stop stop-color="#628eff" offset="1"/></linearGradient></defs><path d="m-4.1e-7 13.4a100 100 0 0 1 100 2e-6l-50 86.6z" fill="url(#linearGradient16)" style="mix-blend-mode:normal"/><path d="m-4.1e-7 13.4a100 100 0 0 1 100 2e-6l-50 86.6z" fill="url(#linearGradient10)" style="mix-blend-mode:normal"/></svg>
 
-<br><button onclick="save()">Save</button>
-
 <script>
 const selectorBB = document.querySelector(".selectorbb");
 const selector = document.querySelector(".selector");
-const saveButton = document.querySelector(".saveButton");
 var pos1 = 0;
 var pos2 = 0;
 var pos3 = 0;
@@ -36,7 +33,7 @@ function initSocket(s) {
     if(event.data instanceof Blob) {
       const blob = event.data;
       const rec = new Uint16Array( await blob.arrayBuffer() );
-      const [r,c,w,x,y] = rec;
+      const [c,w,x,y] = rec;
       //var [T, B] = mapColor(c,w, inverse=true);
       //var [x, y] = TBtoPos(T, B);
       //console.log(`Got blob: ${x} ${y}`);
@@ -44,20 +41,21 @@ function initSocket(s) {
       selectorBB.style.left = x + "px";
       selectorBB.style.top = y + "px";
       selector.style.backgroundColor = posToHex(x, y);
+      selector.style.display = "block";
     }
   });
 
   s.addEventListener("close", (event) => {
+    selector.style.display = "none";
     socket = new WebSocket(socketUrl);
     initSocket(socket);
   });
 }
 
-function send(r,c,w,x,y) {
+function send(c,w,x,y) {
   c = clamp(c, 0, 0xffff);
   w = clamp(w, 0, 0xffff);
-  //console.log(`sent blob: ${c} ${w}`);
-  const bytes = new Uint16Array([r,c,w,x,y]);
+  const bytes = new Uint16Array([c,w,x,y]);
   const blob = new Blob([bytes]);
   socket.send(blob);
 }
@@ -82,16 +80,10 @@ function mapColor(T,B, inverse=false) {
 
 }
 
-function pushColor(x, y, r=0) {
+function pushColor(x, y,) {
   var [T, B] = posToTB(x, y);
   var [c, w] = mapColor(T, B);
-  send(r, c, w, Math.round(x), Math.round(y));
-}
-
-function save() {
-  var x = parseFloat(selectorBB.style.left);
-  var y = parseFloat(selectorBB.style.top);
-  pushColor(x,y,1);
+  send(c, w, Math.round(x), Math.round(y));
 }
 
 class dragElement {
