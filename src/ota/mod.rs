@@ -1,20 +1,20 @@
-mod ota_data_structs;
 mod crc;
-mod ota_data;
-mod partition;
 mod errors;
+mod ota_data;
+mod ota_data_structs;
+mod partition;
 
+pub use crate::ota::errors::OtaError;
+pub use crate::ota::ota_data::{read_ota_data, write_ota_data};
+use crate::ota::ota_data_structs::{EspOTAData, EspOTAState};
+use crate::ota::partition::{ota_data_part, ota_part};
 use core::fmt::{Display, Write};
 use core::result::Result;
 use core::sync::atomic::{AtomicBool, Ordering};
-use embedded_io_async::{Read};
+use embedded_io_async::Read;
 use embedded_storage::{ReadStorage, Storage};
 use esp_println::println;
 use esp_storage::FlashStorage;
-use crate::ota::partition::{ota_data_part, ota_part};
-use crate::ota::ota_data_structs::{EspOTAData, EspOTAState};
-pub use crate::ota::errors::OtaError;
-pub use crate::ota::ota_data::{read_ota_data, write_ota_data};
 
 /// Size of a flash sector
 const SECTOR_SIZE: usize = 0x1000;
@@ -32,7 +32,7 @@ pub async fn ota_begin<R: Read>(mut new_data: R) -> Result<(), OtaError<R::Error
     // Safe since there is no await point between loading and storing
     // TODO check this if we add other chip support
     if IS_UPDATING.load(Ordering::SeqCst) {
-        return Err(OtaError::AlreadyUpdating)
+        return Err(OtaError::AlreadyUpdating);
     }
     IS_UPDATING.store(true, Ordering::SeqCst);
 
@@ -43,7 +43,7 @@ pub async fn ota_begin<R: Read>(mut new_data: R) -> Result<(), OtaError<R::Error
     let booted_seq = ota_data.seq - 1;
     let new_seq = ota_data.seq + 1; // TODO: support more than 2 ota partitions
     println!("Currently running from {booted_seq}, writing to {new_seq}");
-    let ota_app = ota_part(( (new_seq - 1) % 2) as u8);
+    let ota_app = ota_part(((new_seq - 1) % 2) as u8);
 
     let mut data_written = 0;
     let mut flash = FlashStorage::new();
@@ -57,7 +57,7 @@ pub async fn ota_begin<R: Read>(mut new_data: R) -> Result<(), OtaError<R::Error
             let read = new_data.read(&mut data_buffer[read_len..]).await.unwrap();
             if read == 0 {
                 is_done = true;
-                break
+                break;
             }
             read_len += read;
         }
@@ -75,7 +75,7 @@ pub async fn ota_begin<R: Read>(mut new_data: R) -> Result<(), OtaError<R::Error
         data_written += read_len;
 
         if is_done {
-            break
+            break;
         }
     }
 

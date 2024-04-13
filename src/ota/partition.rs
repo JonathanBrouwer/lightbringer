@@ -1,6 +1,6 @@
-use esp_partition_table::{AppPartitionType, DataPartitionType, PartitionEntry, PartitionType};
 use crate::ota::read_ota_data;
 use crate::partitions::find_partition_type;
+use esp_partition_table::{AppPartitionType, DataPartitionType, PartitionEntry, PartitionType};
 
 /// Find ota data partition
 pub fn ota_data_part() -> PartitionEntry {
