@@ -3,7 +3,7 @@ use esp_storage::FlashStorage;
 use crate::ota::errors::OtaInternalError;
 use crate::ota::errors::OtaInternalError::OtaDataCorrupt;
 use crate::ota::ota_data_structs::EspOTAData;
-use crate::ota::ota_data_part;
+use crate::ota::{ota_data_part, SECTOR_SIZE};
 
 /// Read from ota data partition
 pub fn read_ota_data() -> Result<EspOTAData, OtaInternalError> {
@@ -42,7 +42,7 @@ pub fn write_ota_data(data: EspOTAData) {
         (None, None) => 0,
     };
 
-    flash.write(ota_data.offset + sector * 0x1000, &buffer).unwrap(); //TODO
+    flash.write(ota_data.offset + sector * SECTOR_SIZE as u32, &buffer).unwrap(); //TODO
 }
 
 /// Read both ota partitions, return None if corrupt
@@ -56,7 +56,7 @@ fn read_ota_data_both() -> (Option<EspOTAData>, Option<EspOTAData>) {
     let ota_data0 = EspOTAData::try_from(buffer).ok(); // TODO
 
     // Read second copy
-    flash.read(ota_data_part.offset + 0x1000, &mut buffer).unwrap(); // TODO
+    flash.read(ota_data_part.offset + SECTOR_SIZE as u32, &mut buffer).unwrap(); // TODO
     let ota_data1 = EspOTAData::try_from(buffer).ok(); // TODO
 
     return (ota_data0, ota_data1)

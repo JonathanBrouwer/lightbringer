@@ -1,5 +1,5 @@
 [target.riscv32imc-unknown-none-elf]
-runner = "espflash flash --erase-parts otadata --monitor"
+runner = "espflash flash --erase-parts otadata --baud 921600 --monitor"
 
 
 [env]

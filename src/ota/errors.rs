@@ -10,7 +10,9 @@ pub enum OtaError<T> {
     /// Not enough space in partition
     OutOfSpace,
     /// Internal error
-    InternalError(OtaInternalError)
+    InternalError(OtaInternalError),
+    /// Another update is already in progress
+    AlreadyUpdating,
 }
 
 #[derive(Debug, Clone)]
