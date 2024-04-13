@@ -8,11 +8,10 @@ pub use crate::ota::errors::OtaError;
 pub use crate::ota::ota_data::{read_ota_data, write_ota_data};
 use crate::ota::ota_data_structs::{EspOTAData, EspOTAState};
 use crate::ota::partition::{ota_data_part, ota_part};
-use core::fmt::{Display, Write};
 use core::result::Result;
 use core::sync::atomic::{AtomicBool, Ordering};
 use embedded_io_async::Read;
-use embedded_storage::{ReadStorage, Storage};
+use embedded_storage::Storage;
 use esp_println::println;
 use esp_storage::FlashStorage;
 

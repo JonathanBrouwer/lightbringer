@@ -27,14 +27,12 @@ use esp_hal::{
     IO,
 };
 use esp_println::println;
-use esp_storage::FlashStorage;
-use light_state::LightState;
 use picoserve::Router;
 use static_cell::make_static;
 
 use crate::http::setup_http_server;
 use crate::leds::setup_leds;
-use crate::ota::{ota_accept, read_ota_data, write_ota_data};
+use crate::ota::ota_accept;
 use crate::value_synchronizer::ValueSynchronizer;
 use crate::web_app::{make_app, AppRouter};
 
