@@ -1,4 +1,5 @@
 use crate::http::MAX_LISTENERS;
+use crate::light_state::LightState;
 use crate::value_synchronizer::ValueSynchronizer;
 use embassy_executor::Spawner;
 use embassy_sync::blocking_mutex::raw::NoopRawMutex;
@@ -8,14 +9,12 @@ use esp_hal::ledc::channel::config::PinConfig;
 use esp_hal::ledc::channel::Channel;
 use esp_hal::ledc::timer::config::Duty;
 use esp_hal::ledc::timer::config::Duty::Duty12Bit;
-use esp_hal::ledc::{channel, LEDC, LowSpeed, LSGlobalClkSource, timer};
+use esp_hal::ledc::{channel, timer, LSGlobalClkSource, LowSpeed, LEDC};
 use esp_hal::prelude::{
-    _esp_hal_ledc_channel_ChannelHW,
-    _esp_hal_ledc_channel_ChannelIFace, _esp_hal_ledc_timer_TimerIFace, _fugit_RateExtU32,
+    _esp_hal_ledc_channel_ChannelHW, _esp_hal_ledc_channel_ChannelIFace,
+    _esp_hal_ledc_timer_TimerIFace, _fugit_RateExtU32,
 };
-use esp_println::println;
 use static_cell::make_static;
-use crate::light_state::LightState;
 
 pub const PIN_RED: u8 = 12;
 pub const PIN_BLUE: u8 = 13;
@@ -90,4 +89,3 @@ async fn led_task(
         blue_channel.set_duty_hw(blue);
     }
 }
-

@@ -1,7 +1,7 @@
+use crate::ota::ota_data_part;
+use crate::ota::ota_data_structs::EspOTAData;
 use embedded_storage::{ReadStorage, Storage};
 use esp_storage::FlashStorage;
-use crate::ota::ota_data_structs::EspOTAData;
-use crate::ota::ota_data_part;
 
 /// Read from ota data partition
 pub fn read_ota() -> EspOTAData {

@@ -1,7 +1,5 @@
 use crate::partitions::ReadWritePartitionError::{PartitionFoundTwice, PartitionNotFound};
-use esp_partition_table::{
-    PartitionEntry, PartitionTable, PartitionType, StorageOpError,
-};
+use esp_partition_table::{PartitionEntry, PartitionTable, PartitionType, StorageOpError};
 use esp_storage::FlashStorage;
 
 #[derive(Debug)]

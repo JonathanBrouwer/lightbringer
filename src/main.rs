@@ -3,16 +3,17 @@
 #![feature(type_alias_impl_trait)]
 #![feature(impl_trait_in_assoc_type)]
 
+mod color_storage;
 mod http;
 mod leds;
+mod light_state;
 mod ota;
 mod partitions;
 mod value_synchronizer;
 mod web_app;
 mod wifi;
-mod color_storage;
-mod light_state;
 
+use crate::color_storage::{read_light_state, setup_color_storage};
 use crate::wifi::setup_wifi;
 use embassy_executor::Spawner;
 use esp_backtrace as _;
@@ -21,22 +22,19 @@ use esp_hal::timer::TimerGroup;
 use esp_hal::{
     clock::ClockControl,
     embassy::{self},
-    IO,
     peripherals::Peripherals,
     prelude::*,
+    IO,
 };
 use esp_println::println;
-use esp_storage::FlashStorage;
 use picoserve::Router;
 use static_cell::make_static;
-use light_state::LightState;
-use crate::color_storage::{read_light_state, setup_color_storage};
 
 use crate::http::setup_http_server;
 use crate::leds::setup_leds;
-use crate::ota::{ota_accept, read_ota};
+use crate::ota::ota_accept;
 use crate::value_synchronizer::ValueSynchronizer;
-use crate::web_app::{AppRouter, make_app};
+use crate::web_app::{make_app, AppRouter};
 
 #[main]
 async fn main(spawner: Spawner) {

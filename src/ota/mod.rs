@@ -1,19 +1,18 @@
-mod ota_data_structs;
 mod crc;
-mod ota_data;
-mod partition;
 mod errors;
+mod ota_data;
+mod ota_data_structs;
+mod partition;
 
-use core::fmt::{Display, Write};
-use core::result::Result;
-use embedded_io_async::{Read};
-use embedded_storage::{ReadStorage, Storage};
-use esp_println::println;
-use esp_storage::FlashStorage;
-use crate::ota::partition::{ota_data_part, ota_part, booted_ota_seq};
-use crate::ota::ota_data_structs::{EspOTAData, EspOTAState};
 pub use crate::ota::errors::OtaError;
 pub use crate::ota::ota_data::{read_ota, write_ota};
+use crate::ota::ota_data_structs::{EspOTAData, EspOTAState};
+use crate::ota::partition::{ota_data_part, ota_part};
+use core::result::Result;
+use embedded_io_async::Read;
+use embedded_storage::Storage;
+use esp_println::println;
+use esp_storage::FlashStorage;
 
 /// Begin a new OTA update.
 /// N.B. a new update can only be started after the currently running firmware has been verified!

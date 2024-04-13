@@ -1,7 +1,8 @@
 use crate::http::MAX_LISTENERS;
+use crate::light_state::{LightState, LIGHT_STATE_LEN};
 use crate::ota::ota_begin;
 use crate::value_synchronizer::ValueSynchronizer;
-use embassy_futures::select::{Either, select};
+use embassy_futures::select::{select, Either};
 use embassy_sync::blocking_mutex::raw::NoopRawMutex;
 use embedded_io_async::{Read, Write};
 use esp_hal::reset::software_reset;
@@ -11,7 +12,6 @@ use picoserve::response::ws::{Message, SocketRx, SocketTx, WebSocketCallback};
 use picoserve::response::{ResponseWriter, WebSocketUpgrade};
 use picoserve::routing::{get, PathRouter, RequestHandlerService};
 use picoserve::{response, ResponseSent, Router};
-use crate::light_state::{LightState, LIGHT_STATE_LEN};
 
 pub type AppRouter = impl PathRouter;
 pub fn make_app(
@@ -89,7 +89,7 @@ impl RequestHandlerService<()> for OtaHandler {
         _state: &(),
         _path_parameters: (),
         mut request: Request<'_, R>,
-        response_writer: W,
+        _response_writer: W,
     ) -> Result<ResponseSent, W::Error> {
         let reader = request.body_connection.body().reader();
         println!("Starting OTA update...");
@@ -98,6 +98,5 @@ impl RequestHandlerService<()> for OtaHandler {
         software_reset();
         #[allow(clippy::empty_loop)]
         loop {}
-        // response_writer.write_response(request.body_connection.finalize().await?, response::Response::ok("OTA Upload ok")).await
     }
 }

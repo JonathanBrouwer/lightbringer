@@ -1,5 +1,5 @@
-use core::fmt::{Display, Formatter};
 use crate::ota::crc::esp_crc32;
+use core::fmt::{Display, Formatter};
 
 /// Copied from esp-idf
 /// -`New`: Monitor the first boot. In bootloader this state is changed to PendingVerify.
