@@ -9,4 +9,14 @@ pub enum OtaError<T> {
     ReadError(T),
     /// Not enough space in partition
     OutOfSpace,
+    /// Internal error
+    InternalError(OtaInternalError),
+    /// Another update is already in progress
+    AlreadyUpdating,
+}
+
+#[derive(Debug, Clone)]
+pub enum OtaInternalError {
+    /// Corrupt ota data partition
+    OtaDataCorrupt,
 }

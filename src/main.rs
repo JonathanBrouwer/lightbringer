@@ -34,7 +34,7 @@ use crate::color_storage::{read_light_state, setup_color_storage};
 
 use crate::http::setup_http_server;
 use crate::leds::setup_leds;
-use crate::ota::{ota_accept, read_ota};
+use crate::ota::{ota_accept, read_ota_data, write_ota_data};
 use crate::value_synchronizer::ValueSynchronizer;
 use crate::web_app::{AppRouter, make_app};
 
