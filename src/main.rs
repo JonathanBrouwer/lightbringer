@@ -29,7 +29,7 @@ use static_cell::make_static;
 
 use crate::http::setup_http_server;
 use crate::leds::setup_leds;
-use crate::ota::{ota_accept, read_ota};
+use crate::ota::{ota_accept, read_ota_data, write_ota_data};
 use crate::value_synchronizer::ValueSynchronizer;
 use crate::web_app::{make_app, AppRouter, InputMessage};
 
@@ -70,7 +70,8 @@ async fn main(spawner: Spawner) {
     .await;
     setup_http_server(stack, spawner, app).await;
 
-    println!("OTA DATA: {}", read_ota());
+    let mut ota_data = read_ota_data().unwrap();
+    println!("OTA DATA: {}", ota_data);
 
     // Accept ota
     ota_accept();

@@ -10,10 +10,10 @@ use embedded_io_async::{Read};
 use embedded_storage::{ReadStorage, Storage};
 use esp_println::println;
 use esp_storage::FlashStorage;
-use crate::ota::partition::{ota_data_part, ota_part, booted_ota_seq};
+use crate::ota::partition::{ota_data_part, ota_part};
 use crate::ota::ota_data_structs::{EspOTAData, EspOTAState};
 pub use crate::ota::errors::OtaError;
-pub use crate::ota::ota_data::{read_ota, write_ota};
+pub use crate::ota::ota_data::{read_ota_data, write_ota_data};
 
 /// Begin a new OTA update.
 /// N.B. a new update can only be started after the currently running firmware has been verified!
@@ -25,9 +25,10 @@ pub async fn ota_begin<R: Read>(mut new_data: R) -> Result<(), OtaError<R::Error
     if !ota_valid() {
         return Err(OtaError::PendingVerify);
     }
-    let booted_seq = 1; //find_booted_ota_seq() - 1;
+    let ota_data = read_ota_data().unwrap(); //TODO
+    let booted_seq = ota_data.seq;
     let new_seq = booted_seq + 1; //(booted_seq + 1) % 2; // TODO: support more than 2 ota partitions
-    let ota_app = ota_part(new_seq as u8 - 1);
+    let ota_app = ota_part((new_seq - 1 % 2) as u8);
 
     println!("Currently running from {booted_seq}, writing to {new_seq}");
 
@@ -55,8 +56,8 @@ pub async fn ota_begin<R: Read>(mut new_data: R) -> Result<(), OtaError<R::Error
     }
 
     // Write new OTA data boot entry
-    let data = EspOTAData::new(new_seq, [0xED; 20]);
-    write_ota(data);
+    let data = EspOTAData::new(new_seq, [0xFF; 20]);
+    write_ota_data(data);
 
     Ok(())
 }
@@ -67,9 +68,9 @@ pub async fn ota_begin<R: Read>(mut new_data: R) -> Result<(), OtaError<R::Error
 /// If the system reboots before an OTA update is confirmed
 /// the update will be marked as aborted and will not be booted again.
 pub fn ota_accept() {
-    let mut data = read_ota();
+    let mut data = read_ota_data().unwrap(); //TODO
     data.state = EspOTAState::Valid;
-    write_ota(data);
+    write_ota_data(data);
 }
 
 /// Explicitly mark an OTA update as invalid.
@@ -77,14 +78,14 @@ pub fn ota_accept() {
 /// If the system reboots before an OTA update is confirmed as valid
 /// the update will be marked as aborted and will not be booted again.
 pub fn ota_reject() {
-    let mut data = read_ota();
+    let mut data = read_ota_data().unwrap(); //TODO
     data.state = EspOTAState::Invalid;
-    write_ota(data);
+    write_ota_data(data);
 }
 
 /// Returns true if this OTA update has been accepted, i.e. with `ota_accept`
 pub fn ota_valid() -> bool {
-    let data = read_ota();
+    let data = read_ota_data().unwrap(); //TODO
     match data.state {
         EspOTAState::Valid => true,
         EspOTAState::Undefined => true,
