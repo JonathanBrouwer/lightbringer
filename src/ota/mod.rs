@@ -4,7 +4,7 @@ mod ota_data;
 mod ota_data_structs;
 mod partition;
 
-pub use crate::ota::errors::OtaError;
+pub use crate::ota::errors::OtaUpdateError;
 pub use crate::ota::ota_data::{read_ota_data, write_ota_data};
 use crate::ota::ota_data_structs::{EspOTAData, EspOTAState};
 use crate::ota::partition::{ota_data_part, ota_part};
@@ -24,19 +24,19 @@ static IS_UPDATING: AtomicBool = AtomicBool::new(false);
 /// N.B. a new update can only be started after the currently running firmware has been verified!
 /// See `ota_accept`.
 /// Pass a stream of u8 to serve as the new binary.
-/// May return an `OtaError`, or return successfully
+/// May return an `OtaUpdateError`, or return successfully
 /// If the update was successful, the caller should reboot to activate the new firmware
-pub async fn ota_begin<R: Read>(mut new_data: R) -> Result<(), OtaError<R::Error>> {
+pub async fn ota_begin<R: Read>(mut new_data: R) -> Result<(), OtaUpdateError<R::Error>> {
     // Safety: IS_UPDATING is not accessible to interrupts and the ESP32C3 chip is single-core
     // Safe since there is no await point between loading and storing
     // TODO check this if we add other chip support
     if IS_UPDATING.load(Ordering::SeqCst) {
-        return Err(OtaError::AlreadyUpdating);
+        return Err(OtaUpdateError::AlreadyUpdating);
     }
     IS_UPDATING.store(true, Ordering::SeqCst);
 
     if !ota_valid() {
-        return Err(OtaError::PendingVerify);
+        return Err(OtaUpdateError::PendingVerify);
     }
     let ota_data = read_ota_data().unwrap(); //TODO
     let booted_seq = ota_data.seq - 1;
@@ -62,7 +62,7 @@ pub async fn ota_begin<R: Read>(mut new_data: R) -> Result<(), OtaError<R::Error
         }
 
         if data_written + read_len > ota_app.size {
-            return Err(OtaError::OutOfSpace);
+            return Err(OtaUpdateError::OutOfSpace);
         }
         println!("Wrote {data_written:x} so far...");
         flash
