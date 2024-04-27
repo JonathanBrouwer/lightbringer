@@ -16,8 +16,8 @@ use esp_hal::prelude::{
 };
 use static_cell::make_static;
 
-pub const PIN_RED: u8 = 12;
-pub const PIN_BLUE: u8 = 13;
+pub const PIN_RED: u8 = 18;
+pub const PIN_BLUE: u8 = 19;
 pub const DUTY: Duty = Duty12Bit;
 
 pub fn setup_leds(

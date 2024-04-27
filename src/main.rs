@@ -41,10 +41,17 @@ async fn main(spawner: Spawner) {
     // Hardware init
     println!("Starting initialization...");
     let peripherals = Peripherals::take();
+    let io = IO::new(peripherals.GPIO, peripherals.IO_MUX);
+    let mut setup_pin = io.pins.gpio12.into_push_pull_output();
+    setup_pin.set_high().unwrap();
+    io.pins.gpio13.into_push_pull_output().set_low().unwrap();
+    
+    // Setup embassy
     let system = peripherals.SYSTEM.split();
     let clocks: &'static Clocks = make_static!(ClockControl::max(system.clock_control).freeze());
     let timer_group0 = TimerGroup::new(peripherals.TIMG0, clocks);
     embassy::init(clocks, timer_group0);
+    
 
     // Setup app
     let initial_color = read_light_state();
@@ -53,11 +60,10 @@ async fn main(spawner: Spawner) {
     let app: &'static Router<AppRouter> = make_static!(make_app(value));
 
     // Setup leds
-    let io = IO::new(peripherals.GPIO, peripherals.IO_MUX);
     setup_leds(
         value,
-        io.pins.gpio12,
-        io.pins.gpio13,
+        io.pins.gpio18,
+        io.pins.gpio19,
         clocks,
         peripherals.LEDC,
         spawner,
@@ -76,6 +82,7 @@ async fn main(spawner: Spawner) {
     setup_http_server(stack, spawner, app).await;
 
     // Accept ota
+    setup_pin.set_low().unwrap();
     ota_accept();
 
     println!("Running...")
