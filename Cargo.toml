@@ -12,7 +12,7 @@ esp-backtrace = { version = "0.11.1", features = [
     "panic-handler",
     "println"
 ] }
-esp-println = { version = "0.9.1", features = ["esp32c3"] }
+esp-println = { version = "0.9.1", features = ["esp32c3", "log"] }
 esp-storage = { version = "0.3.0", features = ["esp32c3"] }
 esp-partition-table = "0.1.1"
 embedded-storage = "0.3"
@@ -42,9 +42,9 @@ static_cell = { version = "2.0.0", features = ["nightly"] }
 
 # Other
 picoserve = { version = "0.10.2", features = ["embassy"] }
-
-# OTA
 crc = "3.0.1"
+log = "0.4.21"
+ringbuffer = {  version  = "0.15.0", default-features = false }
 
 [patch.crates-io]
 # Fixes https://github.com/embassy-rs/embassy/issues/2709

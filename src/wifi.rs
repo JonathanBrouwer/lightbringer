@@ -6,7 +6,6 @@ use esp_hal::peripherals::{RNG, SYSTIMER, WIFI};
 use esp_hal::system::RadioClockControl;
 use esp_hal::systimer::SystemTimer;
 use esp_hal::rng::Rng;
-use esp_println::println;
 use esp_wifi::wifi::{
     ClientConfiguration, Configuration, WifiController, WifiDevice, WifiEvent, WifiStaDevice,
     WifiState,
@@ -53,10 +52,10 @@ pub async fn setup_wifi(
         Timer::after(Duration::from_millis(500)).await;
     }
 
-    println!("Waiting to get IP address...");
+    log::info!("Waiting to get IP address...");
     loop {
         if let Some(config) = stack.config_v4() {
-            println!("Got IP: {}", config.address);
+            log::info!("Got IP: {}", config.address);
             break;
         }
         Timer::after(Duration::from_millis(500)).await;
@@ -68,12 +67,12 @@ pub async fn setup_wifi(
 /// Task with the goal to connect to the wifi network when possible
 #[embassy_executor::task]
 async fn connect_task(mut controller: WifiController<'static>) {
-    println!("Start connection task...");
+    log::info!("Start connection task...");
     loop {
         if let WifiState::StaConnected = esp_wifi::wifi::get_wifi_state() {
             // wait until we're no longer connected
             controller.wait_for_event(WifiEvent::StaDisconnected).await;
-            println!("Disconnected from wifi, waiting 5 seconds before reconnecting...");
+            log::info!("Disconnected from wifi, waiting 5 seconds before reconnecting...");
             Timer::after(Duration::from_millis(5000)).await
         }
         if !matches!(controller.is_started(), Ok(true)) {
@@ -83,15 +82,15 @@ async fn connect_task(mut controller: WifiController<'static>) {
                 ..Default::default()
             });
             controller.set_configuration(&client_config).unwrap();
-            println!("Starting wifi controller...");
+            log::info!("Starting wifi controller...");
             controller.start().await.unwrap();
         }
-        println!("Trying to connect to wifi network...");
+        log::info!("Trying to connect to wifi network...");
 
         match controller.connect().await {
-            Ok(_) => println!("Wifi connected!"),
+            Ok(_) => log::info!("Wifi connected!"),
             Err(e) => {
-                println!("Failed to connect to wifi: {e:?}");
+                log::info!("Failed to connect to wifi: {e:?}");
                 Timer::after(Duration::from_millis(5000)).await
             }
         }

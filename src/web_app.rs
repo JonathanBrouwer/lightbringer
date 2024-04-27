@@ -6,16 +6,17 @@ use embassy_futures::select::{select, Either};
 use embassy_sync::blocking_mutex::raw::NoopRawMutex;
 use embedded_io_async::{Read, Write};
 use esp_hal::reset::software_reset;
-use esp_println::println;
 use picoserve::request::Request;
 use picoserve::response::ws::{Message, SocketRx, SocketTx, WebSocketCallback};
-use picoserve::response::{ResponseWriter, WebSocketUpgrade};
-use picoserve::routing::{get, PathRouter, RequestHandlerService};
+use picoserve::response::{IntoResponse, ResponseWriter, WebSocketUpgrade};
+use picoserve::routing::{get, get_service, PathRouter, RequestHandlerService};
 use picoserve::{response, ResponseSent, Router};
+use crate::rotating_logger::RingBufferLogger;
 
 pub type AppRouter = impl PathRouter;
 pub fn make_app(
     data: &'static ValueSynchronizer<MAX_LISTENERS, NoopRawMutex, LightState>,
+    logger: &'static RingBufferLogger,
 ) -> Router<AppRouter> {
     picoserve::Router::new()
         .route(
@@ -27,10 +28,12 @@ pub fn make_app(
             get(|| async move { response::File::html(include_str!("../resources/ota.html")) })
                 .post_service(OtaHandler),
         )
-        // .route(
-        //     "/logs",
-        //     get(|| async move { response:: })
-        // )
+        .route(
+            "/logs",
+            get_service(LogHandler {
+                logger,
+            })
+        )
         .route(
             "/style.css",
             get(|| async move { response::File::css(include_str!("../resources/style.css")) }),
@@ -55,7 +58,7 @@ impl WebSocketCallback for ColorHandler {
         let mut watcher = self.color.watch();
 
         // Send initial message
-        println!("Websocket opened, sending initial message");
+        log::info!("Websocket opened, sending initial message");
         tx.send_binary(&self.color.read_clone().into_bytes())
             .await?;
 
@@ -65,12 +68,12 @@ impl WebSocketCallback for ColorHandler {
                     let bytes = match message {
                         Ok(Message::Binary(bytes)) => bytes,
                         _ => {
-                            println!("Websocket closed");
+                            log::info!("Websocket closed");
                             return Ok(());
                         }
                     };
                     let Ok(bytes): Result<&[u8; LIGHT_STATE_LEN], _> = bytes.try_into() else {
-                        println!("Received invalid WS bytes: {bytes:?}");
+                        log::info!("Received invalid WS bytes: {bytes:?}");
                         return Ok(());
                     };
                     let message = LightState::from_bytes(bytes);
@@ -96,25 +99,33 @@ impl RequestHandlerService<()> for OtaHandler {
         _response_writer: W,
     ) -> Result<ResponseSent, W::Error> {
         let reader = request.body_connection.body().reader();
-        println!("Starting OTA update...");
+        log::info!("Starting OTA update...");
         ota_begin(reader).await.unwrap();
-        println!("OTA update finished, resetting...");
+        log::info!("OTA update finished, resetting...");
         software_reset();
         #[allow(clippy::empty_loop)]
         loop {}
     }
 }
 
-// struct LogHandler;
-// 
-// impl RequestHandlerService<()> for LogHandler {
-//     async fn call_request_handler_service<R: Read, W: ResponseWriter<Error = R::Error>>(
-//         &self,
-//         _state: &(),
-//         _path_parameters: (),
-//         mut request: Request<'_, R>,
-//         _response_writer: W,
-//     ) -> Result<ResponseSent, W::Error> {
-//         
-//     }
-// }
+struct LogHandler {
+    logger: &'static RingBufferLogger,
+}
+
+impl RequestHandlerService<()> for LogHandler {
+    async fn call_request_handler_service<R: Read, W: ResponseWriter<Error = R::Error>>(
+        &self,
+        _state: &(),
+        _path_parameters: (),
+        request: Request<'_, R>,
+        response_writer: W,
+    ) -> Result<ResponseSent, W::Error> {
+        let logs = self.logger.get_logs();
+        let logs = core::str::from_utf8(logs.as_slice()).unwrap();
+
+        logs.write_to(
+            request.body_connection.finalize().await?,
+            response_writer
+        ).await
+    }
+}

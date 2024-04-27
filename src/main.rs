@@ -12,6 +12,7 @@ mod partitions;
 mod value_synchronizer;
 mod web_app;
 mod wifi;
+mod rotating_logger;
 
 use crate::color_storage::{read_light_state, setup_color_storage};
 use crate::wifi::setup_wifi;
@@ -26,20 +27,23 @@ use esp_hal::{
     prelude::*,
     gpio::IO,
 };
-use esp_println::println;
 use picoserve::Router;
 use static_cell::make_static;
 
 use crate::http::setup_http_server;
 use crate::leds::setup_leds;
 use crate::ota::ota_accept;
+use crate::rotating_logger::RingBufferLogger;
 use crate::value_synchronizer::ValueSynchronizer;
 use crate::web_app::{make_app, AppRouter};
 
 #[main]
 async fn main(spawner: Spawner) {
+    // Logging init
+    let logger = RingBufferLogger::init();
+
     // Hardware init
-    println!("Starting initialization...");
+    log::info!("Starting initialization...");
     let peripherals = Peripherals::take();
     let io = IO::new(peripherals.GPIO, peripherals.IO_MUX);
 
@@ -74,7 +78,7 @@ async fn main(spawner: Spawner) {
     );
 
     // Setup http
-    let app: &'static Router<AppRouter> = make_static!(make_app(value));
+    let app: &'static Router<AppRouter> = make_static!(make_app(value, logger));
     let stack = setup_wifi(
         peripherals.SYSTIMER,
         peripherals.RNG,
@@ -90,5 +94,5 @@ async fn main(spawner: Spawner) {
     setup_pin.set_low();
     ota_accept();
 
-    println!("Running...")
+    log::info!("Running...")
 }

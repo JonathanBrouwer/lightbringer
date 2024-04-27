@@ -550,6 +550,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e98f0f58453dd2ce08d99228fc8757fad39d05dfd26643665d1093b8844f42cc"
 dependencies = [
  "critical-section",
+ "log",
 ]
 
 [[package]]
@@ -837,7 +838,9 @@ dependencies = [
  "esp-storage",
  "esp-wifi",
  "heapless",
+ "log",
  "picoserve",
+ "ringbuffer",
  "static_cell",
 ]
 
@@ -1084,6 +1087,12 @@ name = "regex-syntax"
 version = "0.8.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "adad44e29e4c806119491a7f06f03de4d1af22c3a680dd47f1e6e179439d1f56"
+
+[[package]]
+name = "ringbuffer"
+version = "0.15.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3df6368f71f205ff9c33c076d170dd56ebf68e8161c733c0caa07a7a5509ed53"
 
 [[package]]
 name = "riscv"

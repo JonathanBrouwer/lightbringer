@@ -6,7 +6,6 @@ use embassy_executor::Spawner;
 use embassy_sync::blocking_mutex::raw::NoopRawMutex;
 use embassy_time::Timer;
 use embedded_storage::{ReadStorage, Storage};
-use esp_println::println;
 use esp_storage::FlashStorage;
 
 const WRITE_DELAY: u64 = 5;
@@ -20,7 +19,7 @@ pub fn read_light_state() -> LightState {
 
     // Uninitialized
     if buffer.iter().all(|v| *v == 255) {
-        println!("Initializing to first-time light state.");
+        log::info!("Initializing to first-time light state.");
         return LightState::default();
     }
 
@@ -51,6 +50,6 @@ async fn storage_task(
         flash
             .write(partition.offset, &message.into_bytes())
             .unwrap();
-        println!("Flash storage updated");
+        log::info!("Flash storage updated");
     }
 }

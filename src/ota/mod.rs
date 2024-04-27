@@ -12,7 +12,6 @@ use core::result::Result;
 use core::sync::atomic::{AtomicBool, Ordering};
 use embedded_io_async::Read;
 use embedded_storage::Storage;
-use esp_println::println;
 use esp_storage::FlashStorage;
 
 /// Size of a flash sector
@@ -41,7 +40,7 @@ pub async fn ota_begin<R: Read>(mut new_data: R) -> Result<(), OtaError<R::Error
     let ota_data = read_ota_data().unwrap(); //TODO
     let booted_seq = ota_data.seq - 1;
     let new_seq = ota_data.seq + 1; // TODO: support more than 2 ota partitions
-    println!("Currently running from {booted_seq}, writing to {new_seq}");
+    log::info!("Currently running from {booted_seq}, writing to {new_seq}");
     let ota_app = ota_part(((new_seq - 1) % 2) as u8);
 
     let mut data_written = 0;
@@ -64,7 +63,7 @@ pub async fn ota_begin<R: Read>(mut new_data: R) -> Result<(), OtaError<R::Error
         if data_written + read_len > ota_app.size {
             return Err(OtaError::OutOfSpace);
         }
-        println!("Wrote {data_written:x} so far...");
+        log::info!("Wrote {data_written:x} so far...");
         flash
             .write(
                 ota_app.offset + data_written as u32,
