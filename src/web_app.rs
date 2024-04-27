@@ -27,6 +27,10 @@ pub fn make_app(
             get(|| async move { response::File::html(include_str!("../resources/ota.html")) })
                 .post_service(OtaHandler),
         )
+        // .route(
+        //     "/logs",
+        //     get(|| async move { response:: })
+        // )
         .route(
             "/style.css",
             get(|| async move { response::File::css(include_str!("../resources/style.css")) }),
@@ -100,3 +104,17 @@ impl RequestHandlerService<()> for OtaHandler {
         loop {}
     }
 }
+
+// struct LogHandler;
+// 
+// impl RequestHandlerService<()> for LogHandler {
+//     async fn call_request_handler_service<R: Read, W: ResponseWriter<Error = R::Error>>(
+//         &self,
+//         _state: &(),
+//         _path_parameters: (),
+//         mut request: Request<'_, R>,
+//         _response_writer: W,
+//     ) -> Result<ResponseSent, W::Error> {
+//         
+//     }
+// }

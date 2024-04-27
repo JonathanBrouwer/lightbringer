@@ -24,7 +24,7 @@ use esp_hal::{
     embassy::{self},
     peripherals::Peripherals,
     prelude::*,
-    IO,
+    gpio::IO,
 };
 use esp_println::println;
 use picoserve::Router;
@@ -42,34 +42,39 @@ async fn main(spawner: Spawner) {
     println!("Starting initialization...");
     let peripherals = Peripherals::take();
     let io = IO::new(peripherals.GPIO, peripherals.IO_MUX);
+
+    // Setup GPIO pins
     let mut setup_pin = io.pins.gpio12.into_push_pull_output();
-    setup_pin.set_high().unwrap();
-    io.pins.gpio13.into_push_pull_output().set_low().unwrap();
-    
+    setup_pin.set_high();
+    io.pins.gpio13.into_push_pull_output().set_low();
+    let mut red = io.pins.gpio18.into_push_pull_output();
+    let mut blue = io.pins.gpio19.into_push_pull_output();
+    red.set_low();
+    blue.set_low();
+
     // Setup embassy
     let system = peripherals.SYSTEM.split();
     let clocks: &'static Clocks = make_static!(ClockControl::max(system.clock_control).freeze());
-    let timer_group0 = TimerGroup::new(peripherals.TIMG0, clocks);
+    let timer_group0 = TimerGroup::new_async(peripherals.TIMG0, clocks);
     embassy::init(clocks, timer_group0);
-    
 
     // Setup app
     let initial_color = read_light_state();
     let value: &'static _ = make_static!(ValueSynchronizer::new(initial_color));
     setup_color_storage(spawner, value);
-    let app: &'static Router<AppRouter> = make_static!(make_app(value));
 
     // Setup leds
     setup_leds(
         value,
-        io.pins.gpio18,
-        io.pins.gpio19,
+        red,
+        blue,
         clocks,
         peripherals.LEDC,
         spawner,
     );
 
     // Setup http
+    let app: &'static Router<AppRouter> = make_static!(make_app(value));
     let stack = setup_wifi(
         peripherals.SYSTIMER,
         peripherals.RNG,
@@ -82,7 +87,7 @@ async fn main(spawner: Spawner) {
     setup_http_server(stack, spawner, app).await;
 
     // Accept ota
-    setup_pin.set_low().unwrap();
+    setup_pin.set_low();
     ota_accept();
 
     println!("Running...")

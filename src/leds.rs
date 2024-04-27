@@ -4,16 +4,13 @@ use crate::value_synchronizer::ValueSynchronizer;
 use embassy_executor::Spawner;
 use embassy_sync::blocking_mutex::raw::NoopRawMutex;
 use esp_hal::clock::Clocks;
-use esp_hal::gpio::{GpioPin, Output, PushPull, Unknown};
+use esp_hal::gpio::{GpioPin, Output, PushPull};
 use esp_hal::ledc::channel::config::PinConfig;
 use esp_hal::ledc::channel::Channel;
 use esp_hal::ledc::timer::config::Duty;
 use esp_hal::ledc::timer::config::Duty::Duty12Bit;
 use esp_hal::ledc::{channel, timer, LSGlobalClkSource, LowSpeed, LEDC};
-use esp_hal::prelude::{
-    _esp_hal_ledc_channel_ChannelHW, _esp_hal_ledc_channel_ChannelIFace,
-    _esp_hal_ledc_timer_TimerIFace, _fugit_RateExtU32,
-};
+use esp_hal::prelude::{_esp_hal_ledc_channel_ChannelHW, _esp_hal_ledc_channel_ChannelIFace, _esp_hal_ledc_timer_TimerIFace, _fugit_RateExtU32};
 use static_cell::make_static;
 
 pub const PIN_RED: u8 = 18;
@@ -22,14 +19,14 @@ pub const DUTY: Duty = Duty12Bit;
 
 pub fn setup_leds(
     value: &'static ValueSynchronizer<MAX_LISTENERS, NoopRawMutex, LightState>,
-    red: GpioPin<Unknown, PIN_RED>,
-    blue: GpioPin<Unknown, PIN_BLUE>,
+    red: GpioPin<Output<PushPull>, PIN_RED>,
+    blue: GpioPin<Output<PushPull>, PIN_BLUE>,
     clocks: &'static Clocks,
     ledc: esp_hal::peripherals::LEDC,
     spawner: Spawner,
 ) {
-    let red: &'static mut _ = make_static!(red.into_push_pull_output());
-    let blue: &'static mut _ = make_static!(blue.into_push_pull_output());
+    let red: &'static mut _ = make_static!(red);
+    let blue: &'static mut _ = make_static!(blue);
 
     let ledc: &'static mut LEDC = make_static!(LEDC::new(ledc, clocks,));
     ledc.set_global_slow_clock(LSGlobalClkSource::APBClk);
