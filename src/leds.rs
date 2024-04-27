@@ -3,6 +3,7 @@ use crate::light_state::LightState;
 use crate::value_synchronizer::ValueSynchronizer;
 use embassy_executor::Spawner;
 use embassy_sync::blocking_mutex::raw::NoopRawMutex;
+use embassy_time::Timer;
 use esp_hal::clock::Clocks;
 use esp_hal::gpio::{GpioPin, Output, PushPull};
 use esp_hal::ledc::channel::config::PinConfig;
@@ -21,7 +22,7 @@ pub fn setup_leds(
     value: &'static ValueSynchronizer<MAX_LISTENERS, NoopRawMutex, LightState>,
     red: GpioPin<Output<PushPull>, PIN_RED>,
     blue: GpioPin<Output<PushPull>, PIN_BLUE>,
-    clocks: &'static Clocks,
+    clocks: &'static Clocks<'_>,
     ledc: esp_hal::peripherals::LEDC,
     spawner: Spawner,
 ) {
@@ -73,8 +74,18 @@ async fn led_task(
     let message = value.read_clone();
     let red = (message.warm as u32) << (DUTY as u32) >> 16;
     let blue = (message.cold as u32) << (DUTY as u32) >> 16;
-    red_channel.set_duty_hw(red);
-    blue_channel.set_duty_hw(blue);
+
+    // Wait with starting
+    Timer::after_millis(1000).await;
+    log::info!("Fading in leds...");
+    const STEPS: usize = 100;
+    for i in 1..=STEPS {
+        Timer::after_millis(1000 / STEPS as u64).await;
+        red_channel.set_duty_hw(red * i as u32 / STEPS as u32);
+        blue_channel.set_duty_hw(blue * i as u32 / STEPS as u32);
+    }
+
+    log::info!("Initial color set to {red} {blue}");
 
     loop {
         let message = watcher.read().await;
@@ -84,5 +95,7 @@ async fn led_task(
 
         red_channel.set_duty_hw(red);
         blue_channel.set_duty_hw(blue);
+
+        log::info!("Color set to {red} {blue}");
     }
 }

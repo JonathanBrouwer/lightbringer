@@ -82,6 +82,9 @@ async fn connect_task(mut controller: WifiController<'static>) {
                 ..Default::default()
             });
             controller.set_configuration(&client_config).unwrap();
+            
+            // On first setup, wait 2 seconds in order to avoid bootlooping bug
+            Timer::after_secs(2).await;
             log::info!("Starting wifi controller...");
             controller.start().await.unwrap();
         }
