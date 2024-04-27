@@ -5,7 +5,7 @@ use esp_hal::clock::Clocks;
 use esp_hal::peripherals::{RNG, SYSTIMER, WIFI};
 use esp_hal::system::RadioClockControl;
 use esp_hal::systimer::SystemTimer;
-use esp_hal::Rng;
+use esp_hal::rng::Rng;
 use esp_println::println;
 use esp_wifi::wifi::{
     ClientConfiguration, Configuration, WifiController, WifiDevice, WifiEvent, WifiStaDevice,
