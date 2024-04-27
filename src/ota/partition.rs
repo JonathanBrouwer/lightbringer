@@ -1,14 +1,13 @@
 use crate::partitions::find_partition_type;
 use esp_partition_table::{AppPartitionType, DataPartitionType, PartitionEntry, PartitionType};
+use crate::ota::errors::OtaInternalError;
 
 /// Find ota data partition
-pub fn ota_data_part() -> PartitionEntry {
-    find_partition_type(PartitionType::Data(DataPartitionType::Ota)).unwrap() //TODO
+pub fn ota_data_part() -> Result<PartitionEntry, OtaInternalError> {
+    Ok(find_partition_type(PartitionType::Data(DataPartitionType::Ota))?)
 }
 
 /// Find ota partition with certain sequence number
-pub fn ota_part(seq: u8) -> PartitionEntry {
-    let ota_part = find_partition_type(PartitionType::App(AppPartitionType::Ota(seq))).unwrap(); //TODO
-
-    ota_part
+pub fn ota_part(seq: u8) -> Result<PartitionEntry, OtaInternalError> {
+    Ok(find_partition_type(PartitionType::App(AppPartitionType::Ota(seq)))?)
 }

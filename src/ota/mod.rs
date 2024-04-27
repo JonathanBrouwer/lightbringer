@@ -14,6 +14,7 @@ use embedded_io_async::Read;
 use embedded_storage::Storage;
 use esp_println::println;
 use esp_storage::FlashStorage;
+use crate::ota::errors::OtaInternalError;
 
 /// Size of a flash sector
 const SECTOR_SIZE: usize = 0x1000;
@@ -35,14 +36,14 @@ pub async fn ota_begin<R: Read>(mut new_data: R) -> Result<(), OtaUpdateError<R:
     }
     IS_UPDATING.store(true, Ordering::SeqCst);
 
-    if !ota_valid() {
+    if !ota_valid()? {
         return Err(OtaUpdateError::PendingVerify);
     }
-    let ota_data = read_ota_data().unwrap(); //TODO
+    let ota_data = read_ota_data()?;
     let booted_seq = ota_data.seq - 1;
     let new_seq = ota_data.seq + 1; // TODO: support more than 2 ota partitions
     println!("Currently running from {booted_seq}, writing to {new_seq}");
-    let ota_app = ota_part(((new_seq - 1) % 2) as u8);
+    let ota_app = ota_part(((new_seq - 1) % 2) as u8)?;
 
     let mut data_written = 0;
     let mut flash = FlashStorage::new();
@@ -53,7 +54,7 @@ pub async fn ota_begin<R: Read>(mut new_data: R) -> Result<(), OtaUpdateError<R:
 
         let mut is_done = false;
         while read_len < SECTOR_SIZE {
-            let read = new_data.read(&mut data_buffer[read_len..]).await.unwrap();
+            let read = new_data.read(&mut data_buffer[read_len..]).await.or_else(|e| Err(OtaUpdateError::ReadError(e)))?;
             if read == 0 {
                 is_done = true;
                 break;
@@ -69,8 +70,7 @@ pub async fn ota_begin<R: Read>(mut new_data: R) -> Result<(), OtaUpdateError<R:
             .write(
                 ota_app.offset + data_written as u32,
                 &data_buffer[0..read_len],
-            )
-            .unwrap(); // TODO
+            )?;
         data_written += read_len;
 
         if is_done {
@@ -80,7 +80,7 @@ pub async fn ota_begin<R: Read>(mut new_data: R) -> Result<(), OtaUpdateError<R:
 
     // Write new OTA data boot entry
     let data = EspOTAData::new(new_seq, [0xFF; 20]);
-    write_ota_data(data);
+    write_ota_data(data)?;
 
     Ok(())
 }
@@ -90,28 +90,30 @@ pub async fn ota_begin<R: Read>(mut new_data: R) -> Result<(), OtaUpdateError<R:
 /// May also be called after a reboot without OTA.
 /// If the system reboots before an OTA update is confirmed
 /// the update will be marked as aborted and will not be booted again.
-pub fn ota_accept() {
-    let mut data = read_ota_data().unwrap(); //TODO
+pub fn ota_accept() -> Result<(), OtaInternalError> {
+    let mut data = read_ota_data()?;
     data.state = EspOTAState::Valid;
-    write_ota_data(data);
+    write_ota_data(data)?;
+    Ok(())
 }
 
 /// Explicitly mark an OTA update as invalid.
 /// May be called after an OTA update, but is not required.
 /// If the system reboots before an OTA update is confirmed as valid
 /// the update will be marked as aborted and will not be booted again.
-pub fn ota_reject() {
-    let mut data = read_ota_data().unwrap(); //TODO
+pub fn ota_reject() -> Result<(), OtaInternalError> {
+    let mut data = read_ota_data()?;
     data.state = EspOTAState::Invalid;
-    write_ota_data(data);
+    write_ota_data(data)?;
+    Ok(())
 }
 
 /// Returns true if this OTA update has been accepted, i.e. with `ota_accept`
-pub fn ota_valid() -> bool {
-    let data = read_ota_data().unwrap(); //TODO
-    match data.state {
+pub fn ota_valid() -> Result<bool, OtaInternalError> {
+    let data = read_ota_data()?;
+    Ok(match data.state {
         EspOTAState::Valid => true,
         EspOTAState::Undefined => true,
         _ => false,
-    }
+    })
 }

@@ -7,7 +7,7 @@ use esp_storage::FlashStorage;
 
 /// Read from ota data partition
 pub fn read_ota_data() -> Result<EspOTAData, OtaInternalError> {
-    match read_ota_data_both() {
+    match read_ota_data_both()? {
         (Some(data0), Some(data1)) => {
             if data0.seq > data1.seq {
                 Ok(data0)
@@ -23,12 +23,12 @@ pub fn read_ota_data() -> Result<EspOTAData, OtaInternalError> {
 }
 
 /// Write to ota data partition
-pub fn write_ota_data(data: EspOTAData) {
-    let ota_data = ota_data_part();
+pub fn write_ota_data(data: EspOTAData) -> Result<(), OtaInternalError> {
+    let ota_data = ota_data_part()?;
     let mut flash = FlashStorage::new();
     let buffer: [u8; 32] = data.into();
 
-    let sector = match read_ota_data_both() {
+    let sector = match read_ota_data_both()? {
         (Some(data0), Some(data1)) => {
             if data0.seq > data1.seq {
                 1
@@ -42,26 +42,23 @@ pub fn write_ota_data(data: EspOTAData) {
         (None, None) => 0,
     };
 
-    flash
-        .write(ota_data.offset + sector * SECTOR_SIZE as u32, &buffer)
-        .unwrap(); //TODO
+    flash.write(ota_data.offset + sector * SECTOR_SIZE as u32, &buffer)?;
+    Ok(())
 }
 
 /// Read both ota partitions, return None if corrupt
-fn read_ota_data_both() -> (Option<EspOTAData>, Option<EspOTAData>) {
-    let ota_data_part = ota_data_part();
+fn read_ota_data_both() -> Result<(Option<EspOTAData>, Option<EspOTAData>), OtaInternalError> {
+    let ota_data_part = ota_data_part()?;
     let mut flash = FlashStorage::new();
     let mut buffer = [0; 32];
 
     // Read first copy
-    flash.read(ota_data_part.offset, &mut buffer).unwrap(); // TODO
-    let ota_data0 = EspOTAData::try_from(buffer).ok(); // TODO
+    flash.read(ota_data_part.offset, &mut buffer)?;
+    let ota_data0 = EspOTAData::try_from(buffer).ok();
 
     // Read second copy
-    flash
-        .read(ota_data_part.offset + SECTOR_SIZE as u32, &mut buffer)
-        .unwrap(); // TODO
-    let ota_data1 = EspOTAData::try_from(buffer).ok(); // TODO
+    flash.read(ota_data_part.offset + SECTOR_SIZE as u32, &mut buffer)?;
+    let ota_data1 = EspOTAData::try_from(buffer).ok();
 
-    return (ota_data0, ota_data1);
+    return Ok((ota_data0, ota_data1));
 }

@@ -1,5 +1,6 @@
 use crate::ota::crc::esp_crc32;
 use core::fmt::{Display, Formatter};
+use crate::ota::errors::OtaInternalError;
 
 /// Copied from esp-idf
 /// -`New`: Monitor the first boot. In bootloader this state is changed to PendingVerify.
@@ -79,13 +80,13 @@ impl Display for EspOTAData {
 }
 
 impl TryFrom<[u8; 32]> for EspOTAData {
-    type Error = ();
+    type Error = OtaInternalError;
     fn try_from(value: [u8; 32]) -> Result<Self, Self::Error> {
-        let seq = u32::from_le_bytes(value[0..4].try_into().unwrap()); //TODO
-        let label = value[4..24].try_into().unwrap(); //TODO
+        let seq = u32::from_le_bytes(value[0..4].try_into().unwrap());
+        let label = value[4..24].try_into().unwrap();
         let state =
-            EspOTAState::try_from(u32::from_le_bytes(value[24..28].try_into().unwrap())).unwrap(); //TODO
-        let crc = u32::from_le_bytes(value[28..32].try_into().unwrap()); //TODO
+            EspOTAState::try_from(u32::from_le_bytes(value[24..28].try_into().unwrap())).unwrap();
+        let crc = u32::from_le_bytes(value[28..32].try_into().unwrap());
         if crc == esp_crc32(&seq.to_le_bytes()) {
             Ok(Self {
                 seq,
@@ -94,7 +95,7 @@ impl TryFrom<[u8; 32]> for EspOTAData {
                 crc,
             })
         } else {
-            Err(()) //TODO
+            Err(Self::Error::OtaDataCorrupt)
         }
     }
 }
