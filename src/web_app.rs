@@ -1,11 +1,12 @@
 use crate::http::MAX_LISTENERS;
 use crate::light_state::{LightState, LIGHT_STATE_LEN};
-use crate::ota::ota_begin;
 use crate::value_synchronizer::ValueSynchronizer;
 use embassy_futures::select::{select, Either};
 use embassy_sync::blocking_mutex::raw::NoopRawMutex;
 use embedded_io_async::{Read, Write};
 use esp_hal::reset::software_reset;
+use esp_ota_nostd::ota_begin;
+use esp_storage::FlashStorage;
 use picoserve::request::Request;
 use picoserve::response::ws::{Message, SocketRx, SocketTx, WebSocketCallback};
 use picoserve::response::{IntoResponse, ResponseWriter, WebSocketUpgrade};
@@ -100,7 +101,7 @@ impl RequestHandlerService<()> for OtaHandler {
     ) -> Result<ResponseSent, W::Error> {
         let reader = request.body_connection.body().reader();
         log::info!("Starting OTA update...");
-        ota_begin(reader).await.unwrap();
+        ota_begin(&mut FlashStorage::new(), reader, |_| {}).await.unwrap();
         log::info!("OTA update finished, resetting...");
         software_reset();
         #[allow(clippy::empty_loop)]

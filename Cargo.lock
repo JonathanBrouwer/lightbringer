@@ -583,6 +583,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "esp-ota-nostd"
+version = "0.1.0"
+dependencies = [
+ "crc",
+ "embedded-io-async",
+ "embedded-storage",
+ "esp-partition-table",
+ "log",
+ "portable-atomic",
+]
+
+[[package]]
 name = "esp-partition-table"
 version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -909,7 +921,6 @@ name = "lightbringer"
 version = "0.1.0"
 dependencies = [
  "build-time",
- "crc",
  "embassy-executor",
  "embassy-futures",
  "embassy-net",
@@ -920,7 +931,7 @@ dependencies = [
  "embedded-io-async",
  "embedded-storage",
  "esp-hal",
- "esp-partition-table",
+ "esp-ota-nostd",
  "esp-println",
  "esp-storage",
  "esp-wifi",

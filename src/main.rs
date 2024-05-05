@@ -7,8 +7,6 @@ mod color_storage;
 mod http;
 mod leds;
 mod light_state;
-mod ota;
-mod partitions;
 mod value_synchronizer;
 mod web_app;
 mod wifi;
@@ -28,12 +26,13 @@ use esp_hal::{
     prelude::*,
     gpio::IO,
 };
+use esp_ota_nostd::ota_accept;
+use esp_storage::FlashStorage;
 use picoserve::Router;
 use static_cell::make_static;
 
 use crate::http::setup_http_server;
 use crate::leds::setup_leds;
-use crate::ota::ota_accept;
 use crate::rotating_logger::RingBufferLogger;
 use crate::value_synchronizer::ValueSynchronizer;
 use crate::web_app::{make_app, AppRouter};
@@ -92,8 +91,8 @@ async fn main(spawner: Spawner) {
     setup_http_server(stack, spawner, app).await;
 
     // Accept ota
+    ota_accept(&mut FlashStorage::new()).unwrap();
     setup_pin.set_low();
-    ota_accept().unwrap();
 
     log::info!("Running...")
 }
