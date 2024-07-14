@@ -15,7 +15,7 @@ use esp_hal::ledc::timer::Timer;
 use esp_hal::prelude::{_esp_hal_ledc_channel_ChannelHW, _esp_hal_ledc_channel_ChannelIFace, _esp_hal_ledc_timer_TimerIFace, _fugit_RateExtU32};
 use crate::make_static;
 
-pub const PIN_RED: u8 = 18;
+pub const PIN_RED: u8 = 0;
 pub const PIN_BLUE: u8 = 1;
 pub const DUTY: Duty = Duty12Bit;
 
