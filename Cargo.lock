@@ -502,6 +502,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5443807d6dff69373d433ab9ef5378ad8df50ca6298caf15de6e52e24aaf54d5"
 
 [[package]]
+name = "esp-backtrace"
+version = "0.11.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "dda6c53c50ed96cce44e8565bd7659f8884d55bac3262184c3a77f748553e3ff"
+dependencies = [
+ "esp-println",
+]
+
+[[package]]
 name = "esp-build"
 version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -930,6 +939,7 @@ dependencies = [
  "embedded-hal-async",
  "embedded-io-async",
  "embedded-storage",
+ "esp-backtrace",
  "esp-hal",
  "esp-ota-nostd",
  "esp-println",

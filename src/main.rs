@@ -12,7 +12,7 @@ mod web_app;
 mod wifi;
 mod rotating_logger;
 
-use core::panic::PanicInfo;
+use esp_backtrace as _;
 use build_time::build_time_local;
 use crate::color_storage::{read_light_state, setup_color_storage};
 use crate::wifi::setup_wifi;
@@ -26,7 +26,7 @@ use esp_hal::{
     prelude::*,
     gpio::IO,
 };
-use esp_ota_nostd::ota_accept;
+use esp_ota_nostd::{get_booted_partition, ota_accept, ota_reject};
 use esp_storage::FlashStorage;
 use picoserve::Router;
 use static_cell::make_static;
@@ -43,7 +43,9 @@ async fn main(spawner: Spawner) {
     let logger = RingBufferLogger::init();
 
     // Hardware init
-    log::info!("Starting initialization of version {}...", build_time_local!("%Y-%m-%dT%H:%M:%S%.f%:z"));
+    let mut storage = FlashStorage::new();
+    let partition = get_booted_partition(&mut storage).unwrap();
+    log::info!("Starting initialization from partition {} with build time {}...", partition.name(), build_time_local!("%Y-%m-%dT%H:%M:%S%.f%:z"));
     let peripherals = Peripherals::take();
     let io = IO::new(peripherals.GPIO, peripherals.IO_MUX);
 
@@ -91,17 +93,9 @@ async fn main(spawner: Spawner) {
     setup_http_server(stack, spawner, app).await;
 
     // Accept ota
-    ota_accept(&mut FlashStorage::new()).unwrap();
+    ota_reject(&mut storage).unwrap();
     setup_pin.set_low();
 
     log::info!("Running...")
 }
 
-#[panic_handler]
-fn panic_handler(_info: &PanicInfo) -> ! {
-    let peripherals = unsafe { Peripherals::steal() };
-    let io = IO::new(peripherals.GPIO, peripherals.IO_MUX);
-    io.pins.gpio13.into_push_pull_output().set_high();
-
-    loop {}
-}
