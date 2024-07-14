@@ -5,7 +5,7 @@ use embassy_sync::blocking_mutex::raw::CriticalSectionRawMutex;
 use esp_println::println;
 use log::{Level, Log, Metadata, Record};
 use ringbuffer::{ConstGenericRingBuffer, RingBuffer};
-use static_cell::make_static;
+use crate::make_static;
 
 const BUFFER_SIZE: usize = 4196;
 const MIN_LEVEL: Level = Level::Info;
@@ -16,7 +16,7 @@ pub struct RingBufferLogger {
 
 impl RingBufferLogger {
     pub fn init() -> &'static Self {
-        let logger = make_static!(Self {
+        let logger = make_static!(RingBufferLogger, Self {
             buffer: Mutex::new(RefCell::new(RingBufferWrapper(ConstGenericRingBuffer::new())))
         });
 

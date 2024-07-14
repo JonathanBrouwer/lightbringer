@@ -3,7 +3,7 @@ use crate::wifi::WifiStack;
 use embassy_executor::Spawner;
 use embassy_time::Duration;
 use picoserve::*;
-use static_cell::make_static;
+use crate::make_static;
 
 const PORT: u16 = 80;
 const MAX_CONNECTIONS: usize = 8;
@@ -14,7 +14,7 @@ pub async fn setup_http_server(
     spawner: Spawner,
     app: &'static Router<AppRouter>,
 ) {
-    let config = make_static!(Config::new(Timeouts {
+    let config = make_static!(Config<Duration>, Config::new(Timeouts {
         start_read_request: None,
         read_request: None,
         write: None,

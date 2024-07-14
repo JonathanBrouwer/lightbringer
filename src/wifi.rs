@@ -2,16 +2,15 @@ use embassy_executor::Spawner;
 use embassy_net::{Config, Stack, StackResources};
 use embassy_time::{Duration, Timer};
 use esp_hal::clock::Clocks;
-use esp_hal::peripherals::{RNG, SYSTIMER, WIFI};
-use esp_hal::system::RadioClockControl;
-use esp_hal::systimer::SystemTimer;
+use esp_hal::peripherals::{RADIO_CLK, RNG, SYSTIMER, WIFI};
 use esp_hal::rng::Rng;
+use esp_hal::timer::systimer::SystemTimer;
 use esp_wifi::wifi::{
     ClientConfiguration, Configuration, WifiController, WifiDevice, WifiEvent, WifiStaDevice,
     WifiState,
 };
 use esp_wifi::{initialize, EspWifiInitFor};
-use static_cell::make_static;
+use crate::make_static;
 
 const SSID: &str = "Jonathan's Tennisnet";
 const PASSWORD: &str = "nahtanoj";
@@ -22,7 +21,7 @@ pub type WifiStack = &'static Stack<WifiDevice<'static, WifiStaDevice>>;
 pub async fn setup_wifi(
     systimer: SYSTIMER,
     rng: RNG,
-    radio: RadioClockControl,
+    radio: RADIO_CLK,
     clocks: &Clocks<'_>,
     wifi: WIFI,
     spawner: Spawner,
@@ -36,10 +35,10 @@ pub async fn setup_wifi(
 
     let config = Config::dhcpv4(Default::default());
     // Init network stack
-    let stack = &*make_static!(Stack::new(
+    let stack = &*make_static!(Stack<WifiDevice<'static, WifiStaDevice>>, Stack::new(
         wifi_interface,
         config,
-        make_static!(StackResources::<MAX_SOCKETS>::new()),
+        make_static!(StackResources<MAX_SOCKETS>, StackResources::<MAX_SOCKETS>::new()),
         rng.random() as u64
     ));
     spawner.spawn(net_task(stack)).ok();
