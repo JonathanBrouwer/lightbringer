@@ -26,7 +26,6 @@ use esp_hal::{
     prelude::*,
 };
 use esp_hal::gpio::{Io, Output};
-use esp_hal::gpio::Level::{High, Low};
 use esp_hal::system::SystemControl;
 use esp_hal::timer::timg::TimerGroup;
 use esp_ota_nostd::{get_booted_partition, ota_accept};
@@ -54,10 +53,10 @@ async fn main(spawner: Spawner) {
     let io = Io::new(peripherals.GPIO, peripherals.IO_MUX);
 
     // Setup GPIO pins
-    let mut setup_pin = Output::new(io.pins.gpio12, High);
-    Output::new(io.pins.gpio13, Low);
+    // let mut setup_pin = Output::new(io.pins.gpio12, High);
+    // Output::new(io.pins.gpio13, Low);
     let red = io.pins.gpio18;
-    let blue = io.pins.gpio19;
+    let blue = io.pins.gpio1;
 
     // Setup embassy
     let system = SystemControl::new(peripherals.SYSTEM);
@@ -96,7 +95,7 @@ async fn main(spawner: Spawner) {
 
     // Accept ota
     ota_accept(&mut storage).unwrap();
-    setup_pin.set_low();
+    // setup_pin.set_low();
 
     log::info!("Running...")
 }

@@ -16,8 +16,12 @@ use esp_hal::prelude::{_esp_hal_ledc_channel_ChannelHW, _esp_hal_ledc_channel_Ch
 use crate::make_static;
 
 pub const PIN_RED: u8 = 18;
-pub const PIN_BLUE: u8 = 19;
+pub const PIN_BLUE: u8 = 1;
 pub const DUTY: Duty = Duty12Bit;
+
+const STARTUP_DELAY: u64 = 0;
+const FADE_IN_TIME: u64 = 2000;
+const STEPS: u64 = 100;
 
 pub fn setup_leds(
     value: &'static ValueSynchronizer<MAX_LISTENERS, NoopRawMutex, LightState>,
@@ -77,11 +81,10 @@ async fn led_task(
     let blue = (message.cold as u32) << (DUTY as u32) >> 16;
 
     // Wait with starting
-    EmbassyTimer::after_millis(1000).await;
+    EmbassyTimer::after_millis(STARTUP_DELAY).await;
     log::info!("Fading in leds...");
-    const STEPS: usize = 100;
     for i in 1..=STEPS {
-        EmbassyTimer::after_millis(1000 / STEPS as u64).await;
+        EmbassyTimer::after_millis(FADE_IN_TIME / STEPS).await;
         red_channel.set_duty_hw(red * i as u32 / STEPS as u32);
         blue_channel.set_duty_hw(blue * i as u32 / STEPS as u32);
     }
