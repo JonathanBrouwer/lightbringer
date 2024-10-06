@@ -4,7 +4,7 @@ use embassy_time::{Duration, Timer};
 use esp_hal::clock::Clocks;
 use esp_hal::peripherals::{RADIO_CLK, RNG, SYSTIMER, WIFI};
 use esp_hal::rng::Rng;
-use esp_hal::timer::systimer::SystemTimer;
+use esp_hal::timer::systimer::{SystemTimer, Target};
 use esp_wifi::wifi::{
     ClientConfiguration, Configuration, WifiController, WifiDevice, WifiEvent, WifiStaDevice,
     WifiState,
@@ -26,7 +26,7 @@ pub async fn setup_wifi(
     wifi: WIFI,
     spawner: Spawner,
 ) -> WifiStack {
-    let timer = SystemTimer::new(systimer).alarm0;
+    let timer = SystemTimer::new(systimer).split::<Target>().alarm0;
     let mut rng = Rng::new(rng);
 
     let init = initialize(EspWifiInitFor::Wifi, timer, rng, radio, clocks).unwrap();

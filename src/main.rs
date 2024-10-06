@@ -63,8 +63,8 @@ async fn main(spawner: Spawner) {
     let system = SystemControl::new(peripherals.SYSTEM);
     let clock_control = ClockControl::max(system.clock_control).freeze();
     let clocks = make_static!(Clocks, clock_control);
-    let timer_group0 = TimerGroup::new_async(peripherals.TIMG0, clocks);
-    esp_hal_embassy::init(clocks, timer_group0);
+    let timer_group0 = TimerGroup::new(peripherals.TIMG0, clocks);
+    esp_hal_embassy::init(clocks, timer_group0.timer0);
 
     // Setup app
     let initial_color = read_light_state();

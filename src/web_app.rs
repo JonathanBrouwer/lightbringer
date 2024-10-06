@@ -22,11 +22,11 @@ pub fn make_app(
     picoserve::Router::new()
         .route(
             "/",
-            get(|| async move { response::File::html(include_str!("../resources/index.html")) }),
+            get_service(response::File::html(include_str!("../resources/index.html")) ),
         )
         .route(
             "/ota",
-            get(|| async move { response::File::html(include_str!("../resources/ota.html")) })
+            get_service(response::File::html(include_str!("../resources/ota.html")))
                 .post_service(OtaHandler),
         )
         .route(
@@ -37,7 +37,7 @@ pub fn make_app(
         )
         .route(
             "/style.css",
-            get(|| async move { response::File::css(include_str!("../resources/style.css")) }),
+            get_service(response::File::css(include_str!("../resources/style.css"))),
         )
         .route(
             "/ws",
