@@ -1,16 +1,16 @@
 use crate::web_app::AppRouter;
-use crate::wifi::WifiStack;
 use embassy_executor::Spawner;
+use embassy_net::Stack;
 use embassy_time::Duration;
 use picoserve::*;
-use crate::make_static;
+use picoserve::make_static;
 
 const PORT: u16 = 80;
 const MAX_CONNECTIONS: usize = 8;
 pub(crate) const MAX_LISTENERS: usize = MAX_CONNECTIONS + 4;
 
 pub async fn setup_http_server(
-    stack: WifiStack,
+    stack: Stack<'static>,
     spawner: Spawner,
     app: &'static Router<AppRouter>,
 ) {
@@ -28,7 +28,7 @@ pub async fn setup_http_server(
 #[embassy_executor::task(pool_size = MAX_CONNECTIONS)]
 async fn web_task(
     id: usize,
-    stack: WifiStack,
+    stack: Stack<'static>,
     app: &'static Router<AppRouter>,
     config: &'static Config<Duration>,
 ) -> ! {

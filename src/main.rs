@@ -11,7 +11,6 @@ mod value_synchronizer;
 mod web_app;
 mod wifi;
 mod rotating_logger;
-mod make_static;
 
 use esp_backtrace as _;
 use build_time::build_time_local;
@@ -19,20 +18,15 @@ use crate::color_storage::{read_light_state, setup_color_storage};
 use crate::wifi::setup_wifi;
 use embassy_executor::Spawner;
 use embassy_sync::blocking_mutex::raw::NoopRawMutex;
-use esp_hal::clock::Clocks;
-use esp_hal::{
-    clock::ClockControl,
-    peripherals::Peripherals,
-    prelude::*,
-};
-use esp_hal::gpio::{Io, Output};
+use esp_hal::clock::CpuClock;
+use esp_hal::Config;
+use esp_hal::gpio::{Output};
 use esp_hal::gpio::Level::{High, Low};
-use esp_hal::system::SystemControl;
 use esp_hal::timer::timg::TimerGroup;
+use esp_hal_embassy::main;
 use esp_ota_nostd::{get_booted_partition, ota_accept};
 use esp_storage::FlashStorage;
-use picoserve::Router;
-
+use picoserve::{make_static, Router};
 use crate::http::setup_http_server;
 use crate::leds::setup_leds;
 use crate::rotating_logger::RingBufferLogger;
@@ -50,21 +44,18 @@ async fn main(spawner: Spawner) {
     let mut storage = FlashStorage::new();
     let partition = get_booted_partition(&mut storage).unwrap();
     log::info!("Starting initialization from partition {} with build time {}...", partition.name(), build_time_local!("%Y-%m-%dT%H:%M:%S%.f%:z"));
-    let peripherals = Peripherals::take();
-    let io = Io::new(peripherals.GPIO, peripherals.IO_MUX);
+    let peripherals = esp_hal::init(Config::default().with_cpu_clock(CpuClock::max()));
+    esp_alloc::heap_allocator!(128 * 1024);
 
     // Setup GPIO pins
-    let mut setup_pin = Output::new(io.pins.gpio12, High);
-    let _debug_pin = Output::new(io.pins.gpio13, Low);
-    let red = io.pins.gpio0;
-    let blue = io.pins.gpio1;
+    let mut setup_pin = Output::new(peripherals.GPIO12, High);
+    let _debug_pin = Output::new(peripherals.GPIO13, Low);
+    let red = peripherals.GPIO0;
+    let blue = peripherals.GPIO1;
 
     // Setup embassy
-    let system = SystemControl::new(peripherals.SYSTEM);
-    let clock_control = ClockControl::max(system.clock_control).freeze();
-    let clocks = make_static!(Clocks, clock_control);
-    let timer_group0 = TimerGroup::new(peripherals.TIMG0, clocks);
-    esp_hal_embassy::init(clocks, timer_group0.timer0);
+    let timg0 = TimerGroup::new(peripherals.TIMG0);
+    esp_hal_embassy::init(timg0.timer0);
 
     // Setup app
     let initial_color = read_light_state();
@@ -76,7 +67,6 @@ async fn main(spawner: Spawner) {
         value,
         red,
         blue,
-        clocks,
         peripherals.LEDC,
         spawner,
     );
@@ -87,11 +77,11 @@ async fn main(spawner: Spawner) {
         peripherals.SYSTIMER,
         peripherals.RNG,
         peripherals.RADIO_CLK,
-        clocks,
         peripherals.WIFI,
         spawner,
     )
     .await;
+
     setup_http_server(stack, spawner, app).await;
 
     // Accept ota

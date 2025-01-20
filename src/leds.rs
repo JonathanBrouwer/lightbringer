@@ -4,15 +4,14 @@ use crate::value_synchronizer::ValueSynchronizer;
 use embassy_executor::Spawner;
 use embassy_sync::blocking_mutex::raw::NoopRawMutex;
 use embassy_time::Timer as EmbassyTimer;
-use esp_hal::clock::Clocks;
 use esp_hal::gpio::GpioPin;
 use esp_hal::ledc::channel::config::PinConfig;
-use esp_hal::ledc::channel::Channel;
+use esp_hal::ledc::channel::{Channel, ChannelHW, ChannelIFace};
 use esp_hal::ledc::timer::config::Duty;
 use esp_hal::ledc::timer::config::Duty::Duty12Bit;
 use esp_hal::ledc::{channel, timer, LSGlobalClkSource, LowSpeed, Ledc};
-use esp_hal::ledc::timer::Timer;
-use esp_hal::prelude::{_esp_hal_ledc_channel_ChannelHW, _esp_hal_ledc_channel_ChannelIFace, _esp_hal_ledc_timer_TimerIFace, _fugit_RateExtU32};
+use esp_hal::ledc::timer::{Timer, TimerIFace};
+use esp_hal::time::RateExtU32;
 use crate::make_static;
 
 pub const PIN_RED: u8 = 0;
@@ -27,17 +26,16 @@ pub fn setup_leds(
     value: &'static ValueSynchronizer<MAX_LISTENERS, NoopRawMutex, LightState>,
     red: GpioPin<PIN_RED>,
     blue: GpioPin<PIN_BLUE>,
-    clocks: &'static Clocks<'_>,
     ledc: esp_hal::peripherals::LEDC,
     spawner: Spawner,
 ) {
     let red = make_static!(GpioPin<PIN_RED>, red);
     let blue = make_static!(GpioPin<PIN_BLUE>, blue);
 
-    let ledc = make_static!(Ledc, Ledc::new(ledc, clocks,));
+    let ledc = make_static!(Ledc, Ledc::new(ledc));
     ledc.set_global_slow_clock(LSGlobalClkSource::APBClk);
 
-    let timer: &'static mut _ = make_static!(Timer<LowSpeed>, ledc.get_timer::<LowSpeed>(timer::Number::Timer1));
+    let timer: &'static mut _ = make_static!(Timer<LowSpeed>, ledc.timer::<LowSpeed>(timer::Number::Timer1));
     timer
         .configure(timer::config::Config {
             duty: DUTY,
@@ -46,7 +44,7 @@ pub fn setup_leds(
         })
         .unwrap();
 
-    let mut red_channel = ledc.get_channel(channel::Number::Channel0, red);
+    let mut red_channel = ledc.channel(channel::Number::Channel0, red);
     red_channel
         .configure(channel::config::Config {
             timer,
@@ -55,7 +53,7 @@ pub fn setup_leds(
         })
         .unwrap();
 
-    let mut blue_channel = ledc.get_channel(channel::Number::Channel1, blue);
+    let mut blue_channel = ledc.channel(channel::Number::Channel1, blue);
     blue_channel
         .configure(channel::config::Config {
             timer,
@@ -70,8 +68,8 @@ pub fn setup_leds(
 #[embassy_executor::task]
 async fn led_task(
     value: &'static ValueSynchronizer<MAX_LISTENERS, NoopRawMutex, LightState>,
-    red_channel: Channel<'static, LowSpeed, GpioPin<PIN_RED>>,
-    blue_channel: Channel<'static, LowSpeed, GpioPin<PIN_BLUE>>,
+    red_channel: Channel<'static, LowSpeed>,
+    blue_channel: Channel<'static, LowSpeed>,
 ) -> ! {
     let mut watcher = value.watch();
 

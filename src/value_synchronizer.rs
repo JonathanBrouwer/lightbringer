@@ -65,10 +65,6 @@ pub struct Watcher<'a, const WATCHER_COUNT: usize, M: RawMutex, T> {
 }
 
 impl<'a, const WATCHER_COUNT: usize, M: RawMutex, T> Watcher<'a, WATCHER_COUNT, M, T> {
-    // pub fn watch<'s>(&'s mut self) -> WatcherFuture<'s, 'a, WATCHER_COUNT, M, T> {
-    //     WatcherFuture(self)
-    // }
-
     pub fn read<'s>(&'s mut self) -> ReaderFuture<'s, 'a, WATCHER_COUNT, M, T>
     where
         T: Clone,
@@ -80,28 +76,6 @@ impl<'a, const WATCHER_COUNT: usize, M: RawMutex, T> Watcher<'a, WATCHER_COUNT, 
         self.last_counter = self.synchronizer.0.lock(|v| v.borrow().counter);
     }
 }
-
-// TODO fix
-// pub struct WatcherFuture<'s, 'a, const WATCHER_COUNT: usize, M: RawMutex, T>(&'s mut Watcher<'a, WATCHER_COUNT, M, T>);
-//
-// impl<'s, 'a, const WATCHER_COUNT: usize, M: RawMutex, T> Future for WatcherFuture<'s, 'a, WATCHER_COUNT, M, T> {
-//     type Output = ();
-//
-//     fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
-//         match pin!(self.0.synchronizer.0.lock()).poll(cx) {
-//             Poll::Pending => {
-//                 panic!("Watcher should be able to lock ")
-//             },
-//             Poll::Ready(guard) => if guard.counter != self.0.last_counter {
-//                 self.0.last_counter = guard.counter;
-//                 Poll::Ready(())
-//             } else {
-//                 self.0.synchronizer.0.lock().poll
-//                 Poll::Pending
-//             }
-//         }
-//     }
-// }
 
 pub struct ReaderFuture<'s, 'a, const WATCHER_COUNT: usize, M: RawMutex, T: Clone>(
     &'s mut Watcher<'a, WATCHER_COUNT, M, T>,
