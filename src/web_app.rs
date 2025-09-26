@@ -1,10 +1,11 @@
 use crate::http::MAX_LISTENERS;
 use crate::light_state::{LightState, LIGHT_STATE_LEN};
+use crate::rotating_logger::RingBufferLogger;
 use crate::value_synchronizer::ValueSynchronizer;
 use embassy_futures::select::{select, Either};
 use embassy_sync::blocking_mutex::raw::NoopRawMutex;
 use embedded_io_async::{Read, Write};
-use esp_hal::reset::software_reset;
+use esp_hal::system::software_reset;
 use esp_ota_nostd::ota_begin;
 use esp_storage::FlashStorage;
 use picoserve::request::Request;
@@ -12,9 +13,10 @@ use picoserve::response::ws::{Message, SocketRx, SocketTx, WebSocketCallback};
 use picoserve::response::{IntoResponse, ResponseWriter, WebSocketUpgrade};
 use picoserve::routing::{get, get_service, PathRouter, RequestHandlerService};
 use picoserve::{response, ResponseSent, Router};
-use crate::rotating_logger::RingBufferLogger;
 
 pub type AppRouter = impl PathRouter;
+
+#[define_opaque(AppRouter)]
 pub fn make_app(
     data: &'static ValueSynchronizer<MAX_LISTENERS, NoopRawMutex, LightState>,
     logger: &'static RingBufferLogger,
@@ -22,19 +24,16 @@ pub fn make_app(
     picoserve::Router::new()
         .route(
             "/",
-            get_service(response::File::html(include_str!("../resources/index.html")) ),
+            get_service(response::File::html(include_str!(
+                "../resources/index.html"
+            ))),
         )
         .route(
             "/ota",
             get_service(response::File::html(include_str!("../resources/ota.html")))
                 .post_service(OtaHandler),
         )
-        .route(
-            "/logs",
-            get_service(LogHandler {
-                logger,
-            })
-        )
+        .route("/logs", get_service(LogHandler { logger }))
         .route(
             "/style.css",
             get_service(response::File::css(include_str!("../resources/style.css"))),
@@ -101,11 +100,11 @@ impl RequestHandlerService<()> for OtaHandler {
     ) -> Result<ResponseSent, W::Error> {
         let reader = request.body_connection.body().reader();
         log::info!("Starting OTA update...");
-        ota_begin(&mut FlashStorage::new(), reader, |_| {}).await.unwrap();
+        ota_begin(&mut FlashStorage::new(), reader, |_| {})
+            .await
+            .unwrap();
         log::info!("OTA update finished, resetting...");
         software_reset();
-        #[allow(clippy::empty_loop)]
-        loop {}
     }
 }
 
@@ -124,9 +123,7 @@ impl RequestHandlerService<()> for LogHandler {
         let logs = self.logger.get_logs();
         let logs = core::str::from_utf8(logs.as_slice()).unwrap();
 
-        logs.write_to(
-            request.body_connection.finalize().await?,
-            response_writer
-        ).await
+        logs.write_to(request.body_connection.finalize().await?, response_writer)
+            .await
     }
 }

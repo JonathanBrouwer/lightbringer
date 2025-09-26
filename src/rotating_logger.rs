@@ -1,11 +1,11 @@
+use crate::make_static;
 use core::cell::RefCell;
 use core::fmt::Write;
-use embassy_sync::blocking_mutex::Mutex;
 use embassy_sync::blocking_mutex::raw::CriticalSectionRawMutex;
+use embassy_sync::blocking_mutex::Mutex;
 use esp_println::println;
 use log::{Level, Log, Metadata, Record};
 use ringbuffer::{ConstGenericRingBuffer, RingBuffer};
-use crate::make_static;
 
 const BUFFER_SIZE: usize = 4196;
 const MIN_LEVEL: Level = Level::Info;
@@ -16,9 +16,14 @@ pub struct RingBufferLogger {
 
 impl RingBufferLogger {
     pub fn init() -> &'static Self {
-        let logger = make_static!(RingBufferLogger, Self {
-            buffer: Mutex::new(RefCell::new(RingBufferWrapper(ConstGenericRingBuffer::new())))
-        });
+        let logger = make_static!(
+            RingBufferLogger,
+            Self {
+                buffer: Mutex::new(RefCell::new(RingBufferWrapper(
+                    ConstGenericRingBuffer::new()
+                )))
+            }
+        );
 
         // Safety: The `make_static` macro above will panic if this code is ran more than once
         // We only call `set_logger` in this function so this is safe.
@@ -31,9 +36,8 @@ impl RingBufferLogger {
     }
 
     pub fn get_logs(&self) -> heapless::Vec<u8, BUFFER_SIZE> {
-        self.buffer.lock(|buffer| {
-            buffer.borrow().0.iter().cloned().collect()
-        })
+        self.buffer
+            .lock(|buffer| buffer.borrow().0.iter().cloned().collect())
     }
 }
 
@@ -44,17 +48,24 @@ impl Log for RingBufferLogger {
 
     fn log(&self, record: &Record) {
         if !self.enabled(record.metadata()) {
-            return
+            return;
         }
         let module_path = record.module_path().unwrap_or("???");
         println!("[{}] {} - {}\n", record.level(), module_path, record.args());
         self.buffer.lock(|buffer| {
             let mut buffer = buffer.borrow_mut();
-            write!(buffer, "[{}] {} - {}\n", record.level(), module_path, record.args()).unwrap();
+            writeln!(
+                buffer,
+                "[{}] {} - {}",
+                record.level(),
+                module_path,
+                record.args()
+            )
+            .unwrap();
         });
     }
 
-    fn flush(&self) { }
+    fn flush(&self) {}
 }
 
 struct RingBufferWrapper(ConstGenericRingBuffer<u8, BUFFER_SIZE>);

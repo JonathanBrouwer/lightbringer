@@ -2,8 +2,8 @@ use crate::web_app::AppRouter;
 use embassy_executor::Spawner;
 use embassy_net::Stack;
 use embassy_time::Duration;
-use picoserve::*;
 use picoserve::make_static;
+use picoserve::*;
 
 const PORT: u16 = 80;
 const MAX_CONNECTIONS: usize = 8;
@@ -14,11 +14,14 @@ pub async fn setup_http_server(
     spawner: Spawner,
     app: &'static Router<AppRouter>,
 ) {
-    let config = make_static!(Config<Duration>, Config::new(Timeouts {
-        start_read_request: None,
-        read_request: None,
-        write: None,
-    }));
+    let config = make_static!(
+        Config<Duration>,
+        Config::new(Timeouts {
+            start_read_request: None,
+            read_request: None,
+            write: None,
+        })
+    );
 
     for id in 0..MAX_CONNECTIONS {
         spawner.must_spawn(web_task(id, stack, app, config));

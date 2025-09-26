@@ -6,12 +6,13 @@ edition = "2021"
 
 [dependencies]
 ## ESP HAL
-esp-hal = { version = "0.23", features = ["esp32c3"] }
-esp-hal-embassy = { version = "0.6", features = ["esp32c3"] }
-esp-println = { version = "0.13", features = ["esp32c3", "log"] }
-esp-backtrace = {version = "0.15", features = ["esp32c3", "panic-handler", "println"]}
+esp-hal = { version = "1.0.0-rc.0", features = ["esp32c3", "unstable"] }
+esp-bootloader-esp-idf = { version = "0.2.0", features = ["esp32c3"] }
+esp-hal-embassy = { version = "0.9", features = ["esp32c3"] }
+esp-println = { version = "0.15", features = ["esp32c3", "log-04"] }
+esp-backtrace = {version = "0.17", features = ["esp32c3", "panic-handler", "println"]}
 esp-storage = { version = "0.4", features = ["esp32c3", "nor-flash"] }
-esp-alloc = "0.6.0"
+esp-alloc = "0.8.0"
 embedded-storage = "0.3"
 embedded-hal-async = "1.0"
 embedded-io-async = "0.6"
@@ -23,7 +24,7 @@ embassy-time   = { version = "0.4" }
 embassy-sync = "0.6"
 
 # Wifi
-esp-wifi = { version = "0.12", features = [
+esp-wifi = { version = "0.15", features = [
     "esp32c3",
     "wifi",
 ] }

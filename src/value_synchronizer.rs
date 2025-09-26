@@ -51,7 +51,7 @@ impl<const WATCHER_COUNT: usize, M: RawMutex, T> ValueSynchronizer<WATCHER_COUNT
         self.update(|v| *v = v_new)
     }
 
-    pub fn watch(&self) -> Watcher<WATCHER_COUNT, M, T> {
+    pub fn watch(&self) -> Watcher<'_, WATCHER_COUNT, M, T> {
         Watcher {
             last_counter: self.0.lock(|v| v.borrow().counter),
             synchronizer: self,

@@ -1,42 +1,44 @@
-use embassy_net::{Runner, Stack};
+use crate::make_static;
 use embassy_executor::Spawner;
 use embassy_net::{Config, StackResources};
+use embassy_net::{Runner, Stack};
 use embassy_time::{Duration, Timer};
-use esp_hal::peripherals::{RADIO_CLK, RNG, SYSTIMER, WIFI};
+use esp_hal::peripherals::{RNG, SYSTIMER, WIFI};
 use esp_hal::rng::Rng;
 use esp_hal::timer::systimer::SystemTimer;
-use esp_wifi::{init, EspWifiController};
 use esp_wifi::wifi::{
-    ClientConfiguration, Configuration, WifiController, WifiDevice, WifiEvent, WifiStaDevice,
-    WifiState,
+    ClientConfiguration, Configuration, WifiController, WifiDevice, WifiEvent, WifiState,
 };
-use crate::make_static;
+use esp_wifi::{init, EspWifiController};
 
 const SSID: &str = "Jonathan's Tennisnet";
 const PASSWORD: &str = "nahtanoj";
 const MAX_SOCKETS: usize = 16;
 
 pub async fn setup_wifi(
-    systimer: SYSTIMER,
-    rng: RNG,
-    radio: RADIO_CLK,
-    wifi: WIFI,
+    systimer: SYSTIMER<'static>,
+    rng: RNG<'static>,
+    wifi: WIFI<'static>,
     spawner: Spawner,
 ) -> Stack<'static> {
     let timer = SystemTimer::new(systimer).alarm0;
     let mut rng = Rng::new(rng);
-    let init: &'static EspWifiController<'static> = make_static!(EspWifiController<'static>, init(timer, rng, radio).unwrap());
+    let init: &'static EspWifiController<'static> =
+        make_static!(EspWifiController<'static>, init(timer, rng).unwrap());
 
-    let (wifi_interface, controller) =
-        esp_wifi::wifi::new_with_mode(&init, wifi, WifiStaDevice).unwrap();
+    let (controller, wifi_interface) = esp_wifi::wifi::new(init, wifi).unwrap();
+    let sta_interface = wifi_interface.sta;
 
     let config = Config::dhcpv4(Default::default());
     // Init network stack
     let (stack, runner): (Stack<'static>, Runner<_>) = embassy_net::new(
-        wifi_interface,
+        sta_interface,
         config,
-        make_static!(StackResources<MAX_SOCKETS>, StackResources::<MAX_SOCKETS>::new()),
-        (rng.random() as u64) << 32 | rng.random() as u64
+        make_static!(
+            StackResources<MAX_SOCKETS>,
+            StackResources::<MAX_SOCKETS>::new()
+        ),
+        (rng.random() as u64) << 32 | rng.random() as u64,
     );
     spawner.spawn(connect_task(controller)).ok();
     spawner.spawn(net_task(runner)).ok();
@@ -75,8 +77,8 @@ async fn connect_task(mut controller: WifiController<'static>) {
         }
         if !matches!(controller.is_started(), Ok(true)) {
             let client_config = Configuration::Client(ClientConfiguration {
-                ssid: SSID.try_into().unwrap(),
-                password: PASSWORD.try_into().unwrap(),
+                ssid: SSID.into(),
+                password: PASSWORD.into(),
                 ..Default::default()
             });
             controller.set_configuration(&client_config).unwrap();
@@ -100,6 +102,6 @@ async fn connect_task(mut controller: WifiController<'static>) {
 
 /// Task that runs the network stack
 #[embassy_executor::task]
-async fn net_task(mut runner: Runner<'static, WifiDevice<'static, WifiStaDevice>>) {
+async fn net_task(mut runner: Runner<'static, WifiDevice<'static>>) {
     runner.run().await
 }

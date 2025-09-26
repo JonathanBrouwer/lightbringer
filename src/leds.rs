@@ -1,21 +1,19 @@
 use crate::http::MAX_LISTENERS;
 use crate::light_state::LightState;
+use crate::make_static;
 use crate::value_synchronizer::ValueSynchronizer;
 use embassy_executor::Spawner;
 use embassy_sync::blocking_mutex::raw::NoopRawMutex;
 use embassy_time::Timer as EmbassyTimer;
-use esp_hal::gpio::GpioPin;
+use esp_hal::gpio::interconnect::PeripheralOutput;
 use esp_hal::ledc::channel::config::PinConfig;
 use esp_hal::ledc::channel::{Channel, ChannelHW, ChannelIFace};
 use esp_hal::ledc::timer::config::Duty;
 use esp_hal::ledc::timer::config::Duty::Duty12Bit;
-use esp_hal::ledc::{channel, timer, LSGlobalClkSource, LowSpeed, Ledc};
 use esp_hal::ledc::timer::{Timer, TimerIFace};
-use esp_hal::time::RateExtU32;
-use crate::make_static;
+use esp_hal::ledc::{channel, timer, LSGlobalClkSource, Ledc, LowSpeed};
+use esp_hal::time::Rate;
 
-pub const PIN_RED: u8 = 0;
-pub const PIN_BLUE: u8 = 1;
 pub const DUTY: Duty = Duty12Bit;
 
 const STARTUP_DELAY: u64 = 0;
@@ -24,23 +22,23 @@ const STEPS: u64 = 100;
 
 pub fn setup_leds(
     value: &'static ValueSynchronizer<MAX_LISTENERS, NoopRawMutex, LightState>,
-    red: GpioPin<PIN_RED>,
-    blue: GpioPin<PIN_BLUE>,
-    ledc: esp_hal::peripherals::LEDC,
+    red: impl PeripheralOutput<'static>,
+    blue: impl PeripheralOutput<'static>,
+    ledc: esp_hal::peripherals::LEDC<'static>,
     spawner: Spawner,
 ) {
-    let red = make_static!(GpioPin<PIN_RED>, red);
-    let blue = make_static!(GpioPin<PIN_BLUE>, blue);
-
     let ledc = make_static!(Ledc, Ledc::new(ledc));
     ledc.set_global_slow_clock(LSGlobalClkSource::APBClk);
 
-    let timer: &'static mut _ = make_static!(Timer<LowSpeed>, ledc.timer::<LowSpeed>(timer::Number::Timer1));
+    let timer: &'static mut _ = make_static!(
+        Timer<LowSpeed>,
+        ledc.timer::<LowSpeed>(timer::Number::Timer1)
+    );
     timer
         .configure(timer::config::Config {
             duty: DUTY,
             clock_source: timer::LSClockSource::APBClk,
-            frequency: (80_000_000 >> (DUTY as u32)).Hz(),
+            frequency: Rate::from_hz(80_000_000 >> (DUTY as u32)),
         })
         .unwrap();
 
