@@ -1151,20 +1151,14 @@ dependencies = [
 name = "lightlib"
 version = "0.1.0"
 dependencies = [
- "build-time",
  "embassy-executor",
  "embassy-futures",
  "embassy-net",
  "embassy-sync 0.6.2",
  "embassy-time 0.5.0",
- "embedded-hal-async",
  "embedded-io-async",
  "embedded-storage",
- "esp-alloc",
- "esp-backtrace",
- "esp-bootloader-esp-idf",
  "esp-hal",
- "esp-hal-embassy",
  "esp-ota-nostd",
  "esp-partition-table",
  "esp-println",

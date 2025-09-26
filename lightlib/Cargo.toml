@@ -7,15 +7,10 @@ edition = "2021"
 [dependencies]
 ## ESP HAL
 esp-hal = { version = "1.0.0-rc.0", features = ["esp32c3", "unstable"] }
-esp-bootloader-esp-idf = { version = "0.2.0", features = ["esp32c3"] }
-esp-hal-embassy = { version = "0.9", features = ["esp32c3"] }
 esp-println = { version = "0.15", features = ["esp32c3", "log-04"] }
-esp-backtrace = {version = "0.17", features = ["esp32c3", "panic-handler", "println"]}
 esp-storage = { version = "0.4", features = ["esp32c3", "nor-flash"] }
 esp-partition-table = "0.1.3"
-esp-alloc = "0.8.0"
 embedded-storage = "0.3"
-embedded-hal-async = "1.0"
 embedded-io-async = "0.6"
 embassy-futures = "0.1"
 
@@ -41,5 +36,4 @@ static_cell = { version = "2.1" }
 picoserve = { version = "0.16.0", features = ["embassy"] }
 log = "0.4"
 ringbuffer = {  version  = "0.15", default-features = false }
-build-time = "0.1"
 esp-ota-nostd = { path = "../../esp-ota-nostd", version = "0.1"}
