@@ -1,0 +1,27 @@
+[package]
+name = "lightbringer"
+version = "0.1.0"
+authors = ["Jonathan Brouwer <jonathantbrouwer@gmail.com>", "Anne Stijns <anstijns@gmail.com>"]
+edition = "2021"
+
+[dependencies]
+lightlib = { path = "../lightlib" }
+
+# ESP HAL
+esp-hal = { version = "1.0.0-rc.0", features = ["esp32c3", "unstable"] }
+esp-bootloader-esp-idf = { version = "0.2.0", features = ["esp32c3"] }
+esp-hal-embassy = { version = "0.9", features = ["esp32c3"] }
+esp-backtrace = {version = "0.17", features = ["esp32c3", "panic-handler", "println"]}
+esp-storage = { version = "0.4", features = ["esp32c3", "nor-flash"] }
+esp-alloc = "0.8.0"
+
+## Embassy
+embassy-executor   = { version = "0.7", features = ["nightly"] }
+embassy-sync = "0.6"
+
+# Other
+picoserve = { version = "0.16.0", features = ["embassy"] }
+log = "0.4"
+build-time = "0.1"
+esp-ota-nostd = { path = "../../esp-ota-nostd", version = "0.1"}
+static_cell = { version = "2.1" }

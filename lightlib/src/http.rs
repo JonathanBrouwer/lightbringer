@@ -7,7 +7,7 @@ use picoserve::*;
 
 const PORT: u16 = 80;
 const MAX_CONNECTIONS: usize = 8;
-pub(crate) const MAX_LISTENERS: usize = MAX_CONNECTIONS + 4;
+pub const MAX_LISTENERS: usize = MAX_CONNECTIONS + 4;
 
 pub async fn setup_http_server(
     stack: Stack<'static>,
@@ -18,6 +18,7 @@ pub async fn setup_http_server(
         Config<Duration>,
         Config::new(Timeouts {
             start_read_request: None,
+            persistent_start_read_request: None,
             read_request: None,
             write: None,
         })

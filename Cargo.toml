@@ -1,53 +1,12 @@
-[package]
-name = "lightbringer"
-version = "0.1.0"
-authors = ["Jonathan Brouwer <jonathantbrouwer@gmail.com>", "Anne Stijns <anstijns@gmail.com>"]
-edition = "2021"
-
-[dependencies]
-## ESP HAL
-esp-hal = { version = "1.0.0-rc.0", features = ["esp32c3", "unstable"] }
-esp-bootloader-esp-idf = { version = "0.2.0", features = ["esp32c3"] }
-esp-hal-embassy = { version = "0.9", features = ["esp32c3"] }
-esp-println = { version = "0.15", features = ["esp32c3", "log-04"] }
-esp-backtrace = {version = "0.17", features = ["esp32c3", "panic-handler", "println"]}
-esp-storage = { version = "0.4", features = ["esp32c3", "nor-flash"] }
-esp-alloc = "0.8.0"
-embedded-storage = "0.3"
-embedded-hal-async = "1.0"
-embedded-io-async = "0.6"
-embassy-futures = "0.1"
-
-## Embassy
-embassy-executor   = { version = "0.7", features = ["nightly"] }
-embassy-time   = { version = "0.4" }
-embassy-sync = "0.6"
-
-# Wifi
-esp-wifi = { version = "0.15", features = [
-    "esp32c3",
-    "wifi",
-] }
-heapless = { version = "0.8", default-features = false }
-embassy-net = { version = "0.6", features = [
-    "tcp",
-    "dhcpv4",
-    "medium-ethernet",
-] }
-static_cell = { version = "2.1" }
-
-# Other
-picoserve = { version = "0.13", features = ["embassy"] }
-log = "0.4"
-ringbuffer = {  version  = "0.15", default-features = false }
-build-time = "0.1"
-esp-ota-nostd = { path = "../esp-ota-nostd", version = "0.1"}
+[workspace]
+resolver = "3"
+members = ["lightbringer", "lightlib"]
 
 [patch.crates-io]
 picoserve = { git = "https://github.com/oleid/picoserve.git", branch = "loosen_embassy_version" }
 
 [profile.dev]
-# Rust debug is too slow. 
+# Rust debug is too slow.
 # For debug builds always builds with some optimization
 opt-level = "s"
 

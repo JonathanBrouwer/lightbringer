@@ -3,25 +3,15 @@
 #![feature(type_alias_impl_trait)]
 #![feature(impl_trait_in_assoc_type)]
 
-mod color_storage;
-mod http;
-mod leds;
-mod light_state;
-mod rotating_logger;
-mod value_synchronizer;
-mod web_app;
-mod wifi;
-//mod app_desc;
-
-use crate::color_storage::{read_light_state, setup_color_storage};
-use crate::http::setup_http_server;
-use crate::http::MAX_LISTENERS;
-use crate::leds::setup_leds;
-use crate::light_state::LightState;
-use crate::rotating_logger::RingBufferLogger;
-use crate::value_synchronizer::ValueSynchronizer;
-use crate::web_app::{make_app, AppRouter};
-use crate::wifi::setup_wifi;
+use lightlib::color_storage::{read_light_state, setup_color_storage};
+use lightlib::http::setup_http_server;
+use lightlib::http::MAX_LISTENERS;
+use lightlib::leds::setup_leds;
+use lightlib::light_state::LightState;
+use lightlib::rotating_logger::RingBufferLogger;
+use lightlib::value_synchronizer::ValueSynchronizer;
+use lightlib::web_app::{make_app, AppRouter};
+use lightlib::wifi::setup_wifi;
 use build_time::build_time_local;
 use embassy_executor::Spawner;
 use embassy_sync::blocking_mutex::raw::NoopRawMutex;
