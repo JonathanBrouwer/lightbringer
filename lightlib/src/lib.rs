@@ -11,5 +11,5 @@ pub mod light_state;
 pub mod partitions;
 pub mod rotating_logger;
 pub mod value_synchronizer;
-pub mod wifi;
 pub mod web_app;
+pub mod wifi;

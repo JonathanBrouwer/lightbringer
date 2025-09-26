@@ -3,15 +3,9 @@
 #![feature(type_alias_impl_trait)]
 #![feature(impl_trait_in_assoc_type)]
 
-use lightlib::color_storage::{read_light_state, setup_color_storage};
-use lightlib::http::setup_http_server;
-use lightlib::http::MAX_LISTENERS;
-use lightlib::leds::setup_leds;
-use lightlib::light_state::LightState;
-use lightlib::rotating_logger::RingBufferLogger;
-use lightlib::value_synchronizer::ValueSynchronizer;
-use lightlib::web_app::{make_app, AppRouter};
-use lightlib::wifi::setup_wifi;
+mod web_app;
+
+use crate::web_app::{make_app, web_task, AppRouter};
 use build_time::build_time_local;
 use embassy_executor::Spawner;
 use embassy_sync::blocking_mutex::raw::NoopRawMutex;
@@ -24,6 +18,14 @@ use esp_hal::Config;
 use esp_hal_embassy::main;
 use esp_ota_nostd::{get_booted_partition, ota_accept};
 use esp_storage::FlashStorage;
+use lightlib::color_storage::{read_light_state, setup_color_storage};
+use lightlib::http::setup_http_server;
+use lightlib::http::MAX_LISTENERS;
+use lightlib::leds::setup_leds;
+use lightlib::light_state::LightState;
+use lightlib::rotating_logger::RingBufferLogger;
+use lightlib::value_synchronizer::ValueSynchronizer;
+use lightlib::wifi::setup_wifi;
 use picoserve::{make_static, Router};
 
 esp_bootloader_esp_idf::esp_app_desc!();
@@ -73,7 +75,7 @@ async fn main(spawner: Spawner) {
     )
     .await;
 
-    setup_http_server(stack, spawner, app).await;
+    setup_http_server(stack, spawner, app, web_task).await;
 
     // Accept ota
     ota_accept(&mut storage).unwrap();

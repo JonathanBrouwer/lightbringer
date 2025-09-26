@@ -10,24 +10,13 @@ use esp_ota_nostd::ota_begin;
 use esp_storage::FlashStorage;
 use picoserve::request::Request;
 use picoserve::response::ws::{Message, SocketRx, SocketTx, WebSocketCallback};
-use picoserve::response::{IntoResponse, ResponseWriter, WebSocketUpgrade};
-use picoserve::routing::{get, get_service, PathRouter, RequestHandlerService};
+use picoserve::response::{IntoResponse, ResponseWriter};
+use picoserve::routing::{get_service, PathRouter, RequestHandlerService};
 use picoserve::{response, ResponseSent, Router};
 
-pub type AppRouter = impl PathRouter;
-
-#[define_opaque(AppRouter)]
-pub fn make_app(
-    data: &'static ValueSynchronizer<MAX_LISTENERS, NoopRawMutex, LightState>,
-    logger: &'static RingBufferLogger,
-) -> Router<AppRouter> {
+/// Provides routes used by both binaries, such as /ota and /logs
+pub fn common_routes(logger: &'static RingBufferLogger) -> Router<impl PathRouter> {
     picoserve::Router::new()
-        .route(
-            "/",
-            get_service(response::File::html(include_str!(
-                "../resources/index.html"
-            ))),
-        )
         .route(
             "/ota",
             get_service(response::File::html(include_str!("../resources/ota.html")))
@@ -38,14 +27,10 @@ pub fn make_app(
             "/style.css",
             get_service(response::File::css(include_str!("../resources/style.css"))),
         )
-        .route(
-            "/ws",
-            get(move |update: WebSocketUpgrade| update.on_upgrade(ColorHandler { color: data })),
-        )
 }
 
 pub struct ColorHandler {
-    color: &'static ValueSynchronizer<MAX_LISTENERS, NoopRawMutex, LightState>,
+    pub color: &'static ValueSynchronizer<MAX_LISTENERS, NoopRawMutex, LightState>,
 }
 
 impl WebSocketCallback for ColorHandler {
@@ -88,7 +73,7 @@ impl WebSocketCallback for ColorHandler {
     }
 }
 
-struct OtaHandler;
+pub struct OtaHandler;
 
 impl RequestHandlerService<()> for OtaHandler {
     async fn call_request_handler_service<R: Read, W: ResponseWriter<Error = R::Error>>(
@@ -108,8 +93,8 @@ impl RequestHandlerService<()> for OtaHandler {
     }
 }
 
-struct LogHandler {
-    logger: &'static RingBufferLogger,
+pub struct LogHandler {
+    pub logger: &'static RingBufferLogger,
 }
 
 impl RequestHandlerService<()> for LogHandler {

@@ -1,18 +1,24 @@
-use crate::web_app::AppRouter;
-use embassy_executor::Spawner;
+use embassy_executor::{SpawnToken, Spawner};
 use embassy_net::Stack;
 use embassy_time::Duration;
 use picoserve::make_static;
+use picoserve::routing::PathRouter;
 use picoserve::*;
 
-const PORT: u16 = 80;
-const MAX_CONNECTIONS: usize = 8;
+pub const PORT: u16 = 80;
+pub const MAX_CONNECTIONS: usize = 8;
 pub const MAX_LISTENERS: usize = MAX_CONNECTIONS + 4;
 
-pub async fn setup_http_server(
+pub async fn setup_http_server<S, A: PathRouter>(
     stack: Stack<'static>,
     spawner: Spawner,
-    app: &'static Router<AppRouter>,
+    app: &'static Router<A>,
+    web_task: fn(
+        usize,
+        Stack<'static>,
+        &'static Router<A>,
+        &'static Config<Duration>,
+    ) -> SpawnToken<S>,
 ) {
     let config = make_static!(
         Config<Duration>,
@@ -25,30 +31,6 @@ pub async fn setup_http_server(
     );
 
     for id in 0..MAX_CONNECTIONS {
-        spawner.must_spawn(web_task(id, stack, app, config));
+        spawner.must_spawn::<S>(web_task(id, stack, app, config));
     }
-}
-
-#[embassy_executor::task(pool_size = MAX_CONNECTIONS)]
-async fn web_task(
-    id: usize,
-    stack: Stack<'static>,
-    app: &'static Router<AppRouter>,
-    config: &'static Config<Duration>,
-) -> ! {
-    let mut tcp_rx_buffer = [0; 1024];
-    let mut tcp_tx_buffer = [0; 1024];
-    let mut http_buffer = [0; 2048];
-
-    listen_and_serve(
-        id,
-        app,
-        config,
-        stack,
-        PORT,
-        &mut tcp_rx_buffer,
-        &mut tcp_tx_buffer,
-        &mut http_buffer,
-    )
-    .await
 }

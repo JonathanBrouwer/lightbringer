@@ -18,6 +18,12 @@ esp-alloc = "0.8.0"
 ## Embassy
 embassy-executor   = { version = "0.7", features = ["nightly"] }
 embassy-sync = "0.6"
+embassy-time = "0.5"
+embassy-net = { version = "0.7.1", features = [
+    "tcp",
+    "dhcpv4",
+    "medium-ethernet",
+] }
 
 # Other
 picoserve = { version = "0.16.0", features = ["embassy"] }
