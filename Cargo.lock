@@ -1170,6 +1170,7 @@ dependencies = [
  "log",
  "picoserve",
  "ringbuffer",
+ "sntpc",
  "static_cell",
 ]
 
@@ -1517,6 +1518,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "sntpc"
+version = "0.6.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b32aa25e58347bda1e0bf936b6bb0e75dad35bdf4f8f89d03a4673d35bba7d3c"
+dependencies = [
+ "cfg-if",
+ "embassy-net",
+]
+
+[[package]]
 name = "stable_deref_trait"
 version = "1.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1669,6 +1680,28 @@ name = "void"
 version = "1.0.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6a02e4885ed3bc0f2de90ea6dd45ebcbb66dacffe03547fadbb0eeae2770887d"
+
+[[package]]
+name = "wakebringer"
+version = "0.1.0"
+dependencies = [
+ "build-time",
+ "embassy-executor",
+ "embassy-net",
+ "embassy-sync 0.6.2",
+ "embassy-time 0.5.0",
+ "esp-alloc",
+ "esp-backtrace",
+ "esp-bootloader-esp-idf",
+ "esp-hal",
+ "esp-hal-embassy",
+ "esp-ota-nostd",
+ "esp-storage",
+ "lightlib",
+ "log",
+ "picoserve",
+ "static_cell",
+]
 
 [[package]]
 name = "wasm-bindgen"

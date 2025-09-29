@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en" >
+<head>
+  <meta charset="UTF-8">
+  <title>Lamp</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="selectorbb">
+  <div class="selector" style="display: none"></div>
+</div>
+
+<svg id="swatch" class="swatch" width="100mm" height="100mm" version="1.1" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"><defs><linearGradient id="linearGradient10" x1="50" x2="50" y1="0" y2="100" gradientTransform="translate(1e-6)" gradientUnits="userSpaceOnUse"><stop stop-opacity="0" offset=".14167"/><stop offset="1"/></linearGradient><linearGradient id="linearGradient16" x1="13" x2="87.5" y1="50" y2="50" gradientUnits="userSpaceOnUse"><stop stop-color="#ffad60" offset="0"/><stop stop-color="#ffe6d2" stop-opacity="1" offset=".5"/><stop stop-color="#628eff" offset="1"/></linearGradient></defs><path d="m-4.1e-7 13.4a100 100 0 0 1 100 2e-6l-50 86.6z" fill="url(#linearGradient16)" style="mix-blend-mode:normal"/><path d="m-4.1e-7 13.4a100 100 0 0 1 100 2e-6l-50 86.6z" fill="url(#linearGradient10)" style="mix-blend-mode:normal"/></svg>
+
+<script>
+const selectorBB = document.querySelector(".selectorbb");
+const selector = document.querySelector(".selector");
+var pos1 = 0;
+var pos2 = 0;
+var pos3 = 0;
+var pos4 = 0;
+var lastSend = 0;
+const minSendDelay = 20;
+
+const socketUrl = "/ws";
+
+var socket = new WebSocket(socketUrl);
+initSocket(socket);
+function initSocket(s) {
+  s.addEventListener("message", async (event) => {
+    if(event.data instanceof Blob) {
+      const blob = event.data;
+      const rec = new Uint16Array( await blob.arrayBuffer() );
+      const [c,w,x,y] = rec;
+      //var [T, B] = mapColor(c,w, inverse=true);
+      //var [x, y] = TBtoPos(T, B);
+      //console.log(`Got blob: ${x} ${y}`);
+      // set the element's new position:
+      selectorBB.style.left = x + "px";
+      selectorBB.style.top = y + "px";
+      selector.style.backgroundColor = posToHex(x, y);
+      selector.style.display = "block";
+    }
+  });
+
+  s.addEventListener("close", (event) => {
+    selector.style.display = "none";
+    socket = new WebSocket(socketUrl);
+    initSocket(socket);
+  });
+}
+
+function send(c,w,x,y) {
+  c = clamp(c, 0, 0xffff);
+  w = clamp(w, 0, 0xffff);
+  const bytes = new Uint16Array([c,w,x,y]);
+  const blob = new Blob([bytes]);
+  socket.send(blob);
+}
+
+function mapColor(T,B, inverse=false) {
+  if(!inverse) {
+    var w,c;
+    B = Math.pow(B,2);
+    c = T;
+    w = 1-T;
+    c = Math.round(c*B*0xffff);
+    w = Math.round(w*B*0xffff);
+    return [c,w];
+  } else {
+    var Ti, Bi, c, w;
+    [c, w] = [T/0x10000, B/0x10000];
+    Bi = Math.sqrt(c**2 + w**2);
+    Bi = Math.pow(Bi,1/2);
+    Ti = c/Bi;
+    return [Ti, Bi];
+  }
+
+}
+
+function pushColor(x, y,) {
+  var [T, B] = posToTB(x, y);
+  var [c, w] = mapColor(T, B);
+  send(c, w, Math.round(x), Math.round(y));
+}
+
+class dragElement {
+  constructor() {
+    // capture touching the selector
+    selectorBB.addEventListener('pointerdown', this);
+    selectorBB.addEventListener('touchbegin', this);
+
+    // capture touch movements to avoid accidental scrolling
+    selectorBB.addEventListener('touchmove', this, { passive: false });
+  }
+
+  handleEvent(e) {
+    // avoid default behaviour (scrolling, reloading, etc.)
+    e.preventDefault();
+
+    switch(e.type) {
+      case 'pointerdown':
+        // add listeners for releasing and moving the selector
+        document.addEventListener('pointerup', this, { passive: false });
+        document.addEventListener('pointermove', this, { passive: false });
+
+        dragMouseDown(e);
+        break;
+      case 'pointerup':
+        // remove listeners again
+        document.removeEventListener('pointerup', this, { passive: false });
+        document.removeEventListener('pointermove', this,  { passive: false });
+
+        break;
+      case 'pointermove':
+        elementDrag(e);
+        break;
+    }
+  }
+}
+
+new dragElement();
+
+function dragMouseDown(e) {
+  // get the mouse cursor position at startup:
+  pos3 = e.clientX;
+  pos4 = e.clientY;
+}
+
+function elementDrag(e) {
+  // calculate the new cursor position:
+  pos1 = pos3 - e.clientX;
+  pos2 = pos4 - e.clientY;
+  pos3 = e.clientX;
+  pos4 = e.clientY;
+
+  var x = selectorBB.offsetLeft - pos1,
+      y = selectorBB.offsetTop - pos2;
+  // keep x and y on the swatch
+  [x, y] = keepInWedge(x, y);
+  // set the element's new position:
+  selectorBB.style.left = x + "px";
+  selectorBB.style.top = y + "px";
+
+  // set the element's color
+  selector.style.backgroundColor = posToHex(x, y);
+
+  // push new TB to lamp
+  time = Date.now()
+  if (time > lastSend + minSendDelay) {
+    lastSend = time;
+    pushColor(x, y);
+  }
+}
+
+const rect = swatch.getBoundingClientRect();
+
+// scale x and y to the range 0..1
+function scaleXY(x, y, reverse=false, mathmode=false) {
+  const yscale = 1.02; // no idea why this is needed
+  const rect = swatch.getBoundingClientRect();
+  var sx, sy;
+  [sx, sy] = [x, y];
+  if(mathmode && reverse) {
+    sx = sx + 0.5;
+    sy = 1 - ( sy / yscale /Math.sqrt(5/4) );
+  }
+
+  if(!reverse) {
+    sy = (sy - rect.top)/rect.height;
+    sx = (sx - rect.left)/rect.width;
+  } else {
+    sy = sy * rect.height + rect.top;
+    sx = sx * rect.width + rect.left;
+  }
+
+  if(mathmode && !reverse) {
+      sx = sx - 0.5;
+      sy = (1 - sy) * yscale * Math.sqrt(5/4);
+  }
+
+  return [sx, sy];
+}
+
+// takes an x,y (0, 1) and returns x,y s.t. the point stays in the wedge
+function keepInWedge(xo,yo) {
+  const [ox, oy] = [xo, yo];
+
+  // move to origin
+  var [x, y] = scaleXY(xo, yo, reverse=false, mathmode=true);
+
+  // right edge
+  if(y < 2*x) {
+    [x, y] = [ 2/5*y + 1/5*x , 4/5*y + 2/5*x];
+  }
+
+  // left edge
+  if(y < -2*x) {
+    [x, y] = [ -2/5*y + 1/5*x,  4/5*y - 2/5*x ];
+  }
+
+  // top arc
+  if(x**2 + y**2 > 5/4) {
+    let s = Math.sqrt( (5/4) / (x**2 + y**2) );
+    [x, y] = [ s*x,  s*y ];
+  }
+
+  // return to pixel coordinates
+  [x, y] = scaleXY(x, y, reverse=true, mathmode=true);
+  return [x, y];
+}
+
+// turns x,y into temperature and brightness
+function posToTB(x, y) {
+  //console.log(`Send blob: ${x} ${y}`);
+  const maxangle = 26.56; // this should be 30 but it isn't :/
+  const [sx, sy] = scaleXY(x, y, reverse=false, mathmode=true);
+  const t = ( ( Math.atan2(sx, sy) / Math.PI * 180 ) + maxangle ) / ( maxangle * 2 );
+  const b = Math.sqrt( (sx**2 + sy**2) / (5/4) );
+
+  return [t, b];
+}
+
+// turns x,y into rgb color on swatch
+function posToHex(x, y) {
+  let swatch = document.getElementById("swatch");
+
+  var [sx, sy] = scaleXY(x, y);
+
+  // value for darkness
+  var v = map(sy,0,1,1,0.1);
+
+  // two gradients: one from 0..0.5 and the other 0.5..1
+  var rmax,rmin,gmax,gmin,bmax,bmin;
+  if (sx < 0.5) {
+    [rmin, gmin, bmin] = [255, 173, 96];
+    [rmax, gmax, bmax] = [255, 230, 210];
+
+    sx = sx * 2;
+  } else {
+    [rmin, gmin, bmin] = [255, 230, 210];
+    [rmax, gmax, bmax] = [98, 142, 255];
+
+    sx = (sx - 0.5) * 2;
+  }
+
+  const r = Math.round(map(sx,0,1,rmin,rmax)*v)
+  const g = Math.round(map(sx,0,1,gmin,gmax)*v)
+  const b = Math.round(map(sx,0,1,bmin,bmax)*v)
+
+  return rgbToHex(r,g,b);
+}
+
+// map a number from one range to another
+function map(x, min_in, max_in, min_out, max_out) {
+  return (x-min_in)/(max_in-min_in)*(max_out-min_out)+min_out;
+}
+
+function clamp(x, min, max) {
+  if(x < min) {
+    return min;
+  }
+  if(x > max) {
+    return max;
+  }
+  return x;
+}
+
+// Convert rgb to hex for CSS
+//https://stackoverflow.com/a/5624139
+function componentToHex(c) {
+  var hex = c.toString(16);
+
+  // possibly pad with 0
+  if(hex.length == 1) {
+    return "0" + hex;
+  } else {
+    return hex;
+  }
+}
+
+function rgbToHex(r,g,b) {
+  return "#" + componentToHex(r) + componentToHex(g) + componentToHex(b);
+}
+</script>
+
+</body>
+
+</html>

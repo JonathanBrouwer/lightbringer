@@ -13,3 +13,4 @@ pub mod rotating_logger;
 pub mod value_synchronizer;
 pub mod web_app;
 pub mod wifi;
+pub mod time;

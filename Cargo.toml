@@ -1,6 +1,6 @@
 [workspace]
 resolver = "3"
-members = ["lightbringer", "lightlib"]
+members = ["lightbringer", "lightlib", "wakebringer"]
 
 [patch.crates-io]
 picoserve = { git = "https://github.com/oleid/picoserve.git", branch = "loosen_embassy_version" }
