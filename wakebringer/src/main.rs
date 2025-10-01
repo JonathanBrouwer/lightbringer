@@ -27,7 +27,7 @@ use lightlib::rotating_logger::RingBufferLogger;
 use lightlib::value_synchronizer::ValueSynchronizer;
 use lightlib::wifi::setup_wifi;
 use picoserve::{make_static, Router};
-use lightlib::time::init_ntp;
+use lightlib::time::ntp_task;
 
 esp_bootloader_esp_idf::esp_app_desc!();
 
@@ -83,7 +83,7 @@ async fn main(spawner: Spawner) {
     setup_pin.set_low();
 
     // Get ntp
-    init_ntp(stack).await;
+    if spawner.spawn(ntp_task(stack)).is_err() { log::warn!("ntp_task failed to spawn"); };
 
     log::info!("Running...")
 }

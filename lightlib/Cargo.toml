@@ -40,3 +40,5 @@ sntpc = {version = "0.6.0", default-features = false, features = ["embassy-socke
 log = "0.4"
 ringbuffer = {  version  = "0.15", default-features = false }
 esp-ota-nostd = { path = "../../esp-ota-nostd", version = "0.1"}
+chrono = { version = "0.4", default-features = false }
+chrono-tz = { version = "0.10", default-features = false }
